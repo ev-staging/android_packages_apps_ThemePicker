@@ -35,6 +35,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.FrameLayout;
 
 import androidx.annotation.Nullable;
@@ -73,6 +74,9 @@ public class ColorSectionController implements CustomizationSectionController<Co
     private static final String TAG = "ColorSectionController";
     private static final String KEY_COLOR_TAB_POSITION = "COLOR_TAB_POSITION";
     private static final String KEY_COLOR_PAGE_POSITION = "COLOR_PAGE_POSITION";
+    private static final String ID_VIEWPAGER = "ColorSectionController_colorSectionViewPager";
+    private static final String ID_ITEMVIEW = "ColorSectionController_itemView";
+    private static final String ID_CONTAINER = "ColorSectionController_container";
     private static final long MIN_COLOR_APPLY_PERIOD = 500L;
 
     private static final int WALLPAPER_TAB_INDEX = 0;
@@ -158,6 +162,7 @@ public class ColorSectionController implements CustomizationSectionController<Co
         mColorSectionView = (ColorSectionView) LayoutInflater.from(context).inflate(
                 R.layout.color_section_view, /* root= */ null);
         mColorSectionViewPager = mColorSectionView.findViewById(R.id.color_section_view_pager);
+        mColorSectionViewPager.setAccessibilityDelegate(createAccessibilityDelegate(ID_VIEWPAGER));
         mColorSectionViewPager.setAdapter(mColorSectionAdapter);
         mColorSectionViewPager.setUserInputEnabled(false);
         if (ColorProvider.themeStyleEnabled) {
@@ -406,6 +411,16 @@ public class ColorSectionController implements CustomizationSectionController<Co
         return action;
     }
 
+    private View.AccessibilityDelegate createAccessibilityDelegate(String id) {
+        return new View.AccessibilityDelegate() {
+            @Override
+            public void onInitializeAccessibilityNodeInfo(View host, AccessibilityNodeInfo info) {
+                super.onInitializeAccessibilityNodeInfo(host, info);
+                info.setUniqueId(id);
+            }
+        };
+    }
+
     private class ColorSectionAdapter extends
             RecyclerView.Adapter<ColorSectionAdapter.ColorPageViewHolder> {
 
@@ -471,6 +486,8 @@ public class ColorSectionController implements CustomizationSectionController<Co
                 if (ColorProvider.themeStyleEnabled) {
                     mPageIndicator.setVisibility(VISIBLE);
                 }
+                itemView.setAccessibilityDelegate(createAccessibilityDelegate(ID_ITEMVIEW));
+                mContainer.setAccessibilityDelegate(createAccessibilityDelegate(ID_CONTAINER));
             }
         }
     }
