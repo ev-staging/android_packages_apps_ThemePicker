@@ -8,11 +8,14 @@ import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.android.customization.model.color.ColorSectionController;
+import com.android.customization.model.color.ColorSectionController2;
 import com.android.customization.model.grid.GridOptionsManager;
 import com.android.customization.model.grid.GridSectionController;
 import com.android.customization.model.mode.DarkModeSectionController;
 import com.android.customization.model.themedicon.ThemedIconSectionController;
 import com.android.customization.model.themedicon.ThemedIconSwitchProvider;
+import com.android.customization.picker.notifications.ui.section.NotificationSectionController;
+import com.android.customization.picker.notifications.ui.viewmodel.NotificationSectionViewModel;
 import com.android.customization.picker.quickaffordance.domain.interactor.KeyguardQuickAffordancePickerInteractor;
 import com.android.customization.picker.quickaffordance.ui.section.KeyguardQuickAffordanceSectionController;
 import com.android.customization.picker.quickaffordance.ui.viewmodel.KeyguardQuickAffordancePickerViewModel;
@@ -39,18 +42,21 @@ public final class DefaultCustomizationSections implements CustomizationSections
     private final KeyguardQuickAffordancePickerInteractor mKeyguardQuickAffordancePickerInteractor;
     private final KeyguardQuickAffordancePickerViewModel.Factory
             mKeyguardQuickAffordancePickerViewModelFactory;
+    private final NotificationSectionViewModel.Factory mNotificationSectionViewModelFactory;
 
     public DefaultCustomizationSections(
             KeyguardQuickAffordancePickerInteractor keyguardQuickAffordancePickerInteractor,
             KeyguardQuickAffordancePickerViewModel.Factory
-                    keyguardQuickAffordancePickerViewModelFactory) {
+                    keyguardQuickAffordancePickerViewModelFactory,
+            NotificationSectionViewModel.Factory notificationSectionViewModelFactory) {
         mKeyguardQuickAffordancePickerInteractor = keyguardQuickAffordancePickerInteractor;
         mKeyguardQuickAffordancePickerViewModelFactory =
                 keyguardQuickAffordancePickerViewModelFactory;
+        mNotificationSectionViewModelFactory = notificationSectionViewModelFactory;
     }
 
     @Override
-    public List<CustomizationSectionController<?>> getSectionControllersForScreen(
+    public List<CustomizationSectionController<?>> getRevampedUISectionControllersForScreen(
             Screen screen,
             FragmentActivity activity,
             LifecycleOwner lifecycleOwner,
@@ -76,14 +82,16 @@ public final class DefaultCustomizationSections implements CustomizationSections
                         displayUtils));
 
         // Theme color section.
-        sectionControllers.add(new ColorSectionController(
-                activity, wallpaperColorsViewModel, lifecycleOwner, savedInstanceState));
+        sectionControllers.add(new ColorSectionController2(
+                activity, wallpaperColorsViewModel, lifecycleOwner, sectionNavigationController));
 
         // Wallpaper quick switch section.
         sectionControllers.add(
                 new WallpaperQuickSwitchSectionController(
+                        screen,
                         wallpaperQuickSwitchViewModel,
-                        lifecycleOwner));
+                        lifecycleOwner,
+                        sectionNavigationController));
 
         switch (screen) {
             case LOCK_SCREEN:
@@ -96,6 +104,15 @@ public final class DefaultCustomizationSections implements CustomizationSections
                                         activity,
                                         mKeyguardQuickAffordancePickerViewModelFactory)
                                         .get(KeyguardQuickAffordancePickerViewModel.class),
+                                lifecycleOwner));
+
+                // Notifications section.
+                sectionControllers.add(
+                        new NotificationSectionController(
+                                new ViewModelProvider(
+                                        activity,
+                                        mNotificationSectionViewModelFactory)
+                                        .get(NotificationSectionViewModel.class),
                                 lifecycleOwner));
                 break;
 
