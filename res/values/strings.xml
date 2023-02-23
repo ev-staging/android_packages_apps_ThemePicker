@@ -36,6 +36,21 @@
     <!-- Title of a section of the customization picker where the user can configure Clock face. [CHAR LIMIT=15] -->
     <string name="clock_settings_title">Clock Settings</string>
 
+    <!-- Title of a tab to change the clock color. [CHAR LIMIT=15] -->
+    <string name="clock_color">Color</string>
+
+    <!-- Title of a tab to change the clock size. [CHAR LIMIT=15] -->
+    <string name="clock_size">Size</string>
+
+    <!-- Title of a radio button to apply clock size dynamic. [CHAR LIMIT=15] -->
+    <string name="clock_size_dynamic">Dynamic</string>
+
+    <!-- Description of a radio button to apply clock size dynamic. [CHAR LIMIT=NONE] -->
+    <string name="clock_size_dynamic_description">Clock size changes according to lock screen content</string>
+
+    <!-- Title of a radio button to apply clock size large. [CHAR LIMIT=15] -->
+    <string name="clock_size_large">Large</string>
+
     <!-- Title of a section of the customization picker where the user can select a Grid size for
         the home screen. [CHAR LIMIT=15] -->
     <string name="grid_title">App grid</string>
@@ -272,18 +287,18 @@
     <string name="adaptive_color_title">Dynamic</string>
 
     <!--
-    Name of the slot on the "start" side of the bottom of the lock screen, where quick affordance
-    buttons can be added to the lock screen. In left-to-right languages, this is the left-hand side
-    button. In right-to-left languages, this is the right-hand side button. [CHAR LIMIT=16].
+    Name of the slot on the "start" side of the bottom of the lock screen, where lock screen
+    shortcuts can be added to the lock screen. In left-to-right languages, this is the left-hand
+    side button. In right-to-left languages, this is the right-hand side button. [CHAR LIMIT=16].
     -->
-    <string name="keyguard_slot_name_bottom_start">Left</string>
+    <string name="keyguard_slot_name_bottom_start">Left shortcut</string>
 
     <!--
-    Name of the slot on the "end" side of the bottom of the lock screen, where quick affordance
-    buttons can be added to the lock screen. In left-to-right languages, this is the right-hand side
-    button. In right-to-left languages, this is the left-hand side button. [CHAR LIMIT=16].
+    Name of the slot on the "end" side of the bottom of the lock screen, where lock screen shortcuts
+    can be added to the lock screen. In left-to-right languages, this is the right-hand side button.
+    In right-to-left languages, this is the left-hand side button. [CHAR LIMIT=16].
     -->
-    <string name="keyguard_slot_name_bottom_end">Right</string>
+    <string name="keyguard_slot_name_bottom_end">Right shortcut</string>
 
     <!--
     Name for an option to have no quick affordance selected for one of the sides of the lock
@@ -373,4 +388,22 @@
     [CHAR LIMIT=64].
     -->
     <string name="hide_notifications_on_lock_screen">Hide notifications on the lock screen</string>
+
+    <!--
+    Title for a section in a list of sections in the settings app that allows the user to access
+    additional settings related to lock screen behaviour.
+
+    [CHAR LIMIT=32].
+    -->
+    <string name="more_settings_section_title">More options</string>
+
+    <!--
+    Summary for a setting that lets the user access additional settings related to lock screen
+    behaviour. Please note that "Now Playing" is an entity; it's a name of an existing feature
+    that allows users to see the song that the device is picking up through its microphone on
+    the lock screen; therefore, it should not be translated literally.
+
+    [CHAR LIMIT=64].
+    -->
+    <string name="more_settings_section_description">Text on lock screen, Now Playing, and more</string>
 </resources>

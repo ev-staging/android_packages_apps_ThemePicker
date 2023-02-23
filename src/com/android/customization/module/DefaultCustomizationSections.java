@@ -19,6 +19,7 @@ import com.android.customization.picker.notifications.ui.viewmodel.NotificationS
 import com.android.customization.picker.quickaffordance.domain.interactor.KeyguardQuickAffordancePickerInteractor;
 import com.android.customization.picker.quickaffordance.ui.section.KeyguardQuickAffordanceSectionController;
 import com.android.customization.picker.quickaffordance.ui.viewmodel.KeyguardQuickAffordancePickerViewModel;
+import com.android.customization.picker.settings.ui.section.MoreSettingsSectionController;
 import com.android.wallpaper.model.CustomizationSectionController;
 import com.android.wallpaper.model.CustomizationSectionController.CustomizationSectionNavigationController;
 import com.android.wallpaper.model.PermissionRequester;
@@ -28,6 +29,7 @@ import com.android.wallpaper.model.WallpaperSectionController;
 import com.android.wallpaper.model.WorkspaceViewModel;
 import com.android.wallpaper.module.CurrentWallpaperInfoFactory;
 import com.android.wallpaper.module.CustomizationSections;
+import com.android.wallpaper.picker.customization.ui.section.ConnectedSectionController;
 import com.android.wallpaper.picker.customization.ui.section.ScreenPreviewSectionController;
 import com.android.wallpaper.picker.customization.ui.section.WallpaperQuickSwitchSectionController;
 import com.android.wallpaper.picker.customization.ui.viewmodel.WallpaperQuickSwitchViewModel;
@@ -81,17 +83,21 @@ public final class DefaultCustomizationSections implements CustomizationSections
                         wallpaperColorsViewModel,
                         displayUtils));
 
-        // Theme color section.
-        sectionControllers.add(new ColorSectionController2(
-                activity, wallpaperColorsViewModel, lifecycleOwner, sectionNavigationController));
-
-        // Wallpaper quick switch section.
         sectionControllers.add(
-                new WallpaperQuickSwitchSectionController(
-                        screen,
-                        wallpaperQuickSwitchViewModel,
-                        lifecycleOwner,
-                        sectionNavigationController));
+                new ConnectedSectionController(
+                        // Theme color section.
+                        new ColorSectionController2(
+                                activity,
+                                wallpaperColorsViewModel,
+                                lifecycleOwner,
+                                sectionNavigationController),
+                        // Wallpaper quick switch section.
+                        new WallpaperQuickSwitchSectionController(
+                                screen,
+                                wallpaperQuickSwitchViewModel,
+                                lifecycleOwner,
+                                sectionNavigationController),
+                        /* reverseOrderWhenHorizontal= */ true));
 
         switch (screen) {
             case LOCK_SCREEN:
@@ -114,6 +120,9 @@ public final class DefaultCustomizationSections implements CustomizationSections
                                         mNotificationSectionViewModelFactory)
                                         .get(NotificationSectionViewModel.class),
                                 lifecycleOwner));
+
+                // More settings section.
+                sectionControllers.add(new MoreSettingsSectionController());
                 break;
 
             case HOME_SCREEN:

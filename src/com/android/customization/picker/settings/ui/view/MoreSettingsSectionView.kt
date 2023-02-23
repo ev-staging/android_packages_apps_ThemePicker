@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2023 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,12 +12,20 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
-package com.android.customization.picker.clock
+
+package com.android.customization.picker.settings.ui.view
 
 import android.content.Context
 import android.util.AttributeSet
 import com.android.wallpaper.picker.SectionView
 
-/** The [SectionView] for app clock. */
-class ClockSectionView(context: Context?, attrs: AttributeSet?) : SectionView(context, attrs)
+class MoreSettingsSectionView(
+    context: Context,
+    attrs: AttributeSet?,
+) :
+    SectionView(
+        context,
+        attrs,
+    )

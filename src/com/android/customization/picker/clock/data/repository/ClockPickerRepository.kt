@@ -14,48 +14,24 @@
  * limitations under the License.
  *
  */
-
 package com.android.customization.picker.clock.data.repository
 
-import android.util.Log
+import com.android.customization.picker.clock.shared.ClockSize
 import com.android.customization.picker.clock.shared.model.ClockMetadataModel
-import com.android.systemui.plugins.ClockMetadata
-import com.android.systemui.shared.clocks.ClockRegistry
-import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
 
 /**
  * Repository for accessing application clock settings, as well as selecting and configuring custom
  * clocks.
  */
-class ClockPickerRepository(registry: ClockRegistry) {
+interface ClockPickerRepository {
+    val allClocks: Array<ClockMetadataModel>
 
-    /** The currently-selected clock. */
-    val selectedClock: Flow<ClockMetadataModel?> = callbackFlow {
-        fun send() {
-            val model =
-                registry
-                    .getClocks()
-                    .find { clockMetadata -> clockMetadata.clockId == registry.currentClockId }
-                    ?.toModel()
-            if (model == null) {
-                Log.e(TAG, "Currently selected clock ID is not one of the available clocks.")
-            }
-            trySend(model)
-        }
+    val selectedClock: Flow<ClockMetadataModel>
 
-        val listener = ClockRegistry.ClockChangeListener { send() }
-        registry.registerClockChangeListener(listener)
-        send()
-        awaitClose { registry.unregisterClockChangeListener(listener) }
-    }
+    val selectedClockSize: Flow<ClockSize>
 
-    private fun ClockMetadata.toModel(): ClockMetadataModel {
-        return ClockMetadataModel(clockId = clockId, name = name)
-    }
+    fun setSelectedClock(clockId: String)
 
-    companion object {
-        private const val TAG = "ClockPickerRepository"
-    }
+    fun setClockSize(size: ClockSize)
 }
