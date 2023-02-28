@@ -37,7 +37,7 @@ class ClockCarouselView(
     private lateinit var adapter: ClockCarouselAdapter
 
     init {
-        val view = LayoutInflater.from(context).inflate(R.layout.clock_carousel_view, this)
+        val view = LayoutInflater.from(context).inflate(R.layout.clock_carousel, this)
         carousel = view.requireViewById(R.id.carousel)
     }
 
@@ -69,7 +69,11 @@ class ClockCarouselView(
         override fun populate(view: View?, index: Int) {
             val viewGroup = view as ViewGroup
             viewGroup.removeAllViews()
-            viewGroup.addView(onGetClockPreview(clockIds[index]))
+            val clockView = onGetClockPreview(clockIds[index])
+            // The clock view might still be attached to an existing parent. Detach before adding to
+            // another parent.
+            (clockView.parent as? ViewGroup)?.removeView(clockView)
+            viewGroup.addView(clockView)
         }
 
         override fun onNewItem(index: Int) {
