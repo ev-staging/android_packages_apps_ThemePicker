@@ -37,7 +37,6 @@ import com.android.customization.model.color.ColorUtils.toColorString
 import com.android.systemui.monet.ColorScheme
 import com.android.systemui.monet.Style
 import com.android.wallpaper.compat.WallpaperManagerCompat
-import com.android.wallpaper.config.Flags
 import com.android.wallpaper.module.InjectorProvider
 import java.util.*
 import kotlinx.coroutines.CoroutineScope
@@ -222,10 +221,10 @@ class ColorProvider(context: Context, stubPackageName: String) :
     @ColorInt
     private fun ColorScheme.getLightColorPreview(): IntArray {
         return intArrayOf(
-            setAlphaComponent(this.accent1[2], ALPHA_MASK),
-            setAlphaComponent(this.accent1[2], ALPHA_MASK),
-            ColorStateList.valueOf(this.accent3[6]).withLStar(85f).colors[0],
-            setAlphaComponent(this.accent1[6], ALPHA_MASK)
+            setAlphaComponent(this.accent1.s100, ALPHA_MASK),
+            setAlphaComponent(this.accent1.s100, ALPHA_MASK),
+            ColorStateList.valueOf(this.accent3.s500).withLStar(85f).colors[0],
+            setAlphaComponent(this.accent1.s500, ALPHA_MASK)
         )
     }
 
@@ -236,23 +235,23 @@ class ColorProvider(context: Context, stubPackageName: String) :
     @ColorInt
     private fun ColorScheme.getDarkColorPreview(): IntArray {
         return intArrayOf(
-            setAlphaComponent(this.accent1[2], ALPHA_MASK),
-            setAlphaComponent(this.accent1[2], ALPHA_MASK),
-            ColorStateList.valueOf(this.accent3[6]).withLStar(85f).colors[0],
-            setAlphaComponent(this.accent1[6], ALPHA_MASK)
+            setAlphaComponent(this.accent1.s100, ALPHA_MASK),
+            setAlphaComponent(this.accent1.s100, ALPHA_MASK),
+            ColorStateList.valueOf(this.accent3.s500).withLStar(85f).colors[0],
+            setAlphaComponent(this.accent1.s500, ALPHA_MASK)
         )
     }
 
     private fun ColorScheme.getPresetColorPreview(seed: Int): IntArray {
         return when (this.style) {
-            Style.FRUIT_SALAD -> intArrayOf(seed, this.accent1[2])
+            Style.FRUIT_SALAD -> intArrayOf(seed, this.accent1.s100)
             Style.TONAL_SPOT -> intArrayOf(this.accentColor, this.accentColor)
             Style.MONOCHROMATIC ->
                 intArrayOf(
                     setAlphaComponent(0x000000, 255),
                     setAlphaComponent(0xFFFFFF, 255),
                 )
-            else -> intArrayOf(this.accent1[2], this.accent1[2])
+            else -> intArrayOf(this.accent1.s100, this.accent1.s100)
         }
     }
 
@@ -287,7 +286,10 @@ class ColorProvider(context: Context, stubPackageName: String) :
                             Style.TONAL_SPOT
                         }
 
-                    if (style == Style.MONOCHROMATIC && !Flags.isMonochromaticFlagEnabled) {
+                    if (
+                        style == Style.MONOCHROMATIC &&
+                            !InjectorProvider.getInjector().getFlags().isMonochromaticFlagEnabled()
+                    ) {
                         continue
                     }
 

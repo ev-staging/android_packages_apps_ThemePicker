@@ -20,8 +20,8 @@ package com.android.customization.picker.quickaffordance.data.repository
 import com.android.customization.picker.quickaffordance.shared.model.KeyguardQuickAffordancePickerAffordanceModel as AffordanceModel
 import com.android.customization.picker.quickaffordance.shared.model.KeyguardQuickAffordancePickerSelectionModel as SelectionModel
 import com.android.customization.picker.quickaffordance.shared.model.KeyguardQuickAffordancePickerSlotModel as SlotModel
-import com.android.systemui.shared.quickaffordance.data.content.KeyguardQuickAffordanceProviderClient as Client
-import com.android.systemui.shared.quickaffordance.data.content.KeyguardQuickAffordanceProviderContract as Contract
+import com.android.systemui.shared.customization.data.content.CustomizationProviderClient as Client
+import com.android.systemui.shared.customization.data.content.CustomizationProviderContract as Contract
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -60,8 +60,11 @@ class KeyguardQuickAffordancePickerRepository(
     }
 
     private fun List<Client.Flag>.isFeatureEnabled(): Boolean {
-        return find { flag -> flag.name == Contract.FlagsTable.FLAG_NAME_FEATURE_ENABLED }?.value ==
-            true
+        return find { flag ->
+                flag.name ==
+                    Contract.FlagsTable.FLAG_NAME_CUSTOM_LOCK_SCREEN_QUICK_AFFORDANCES_ENABLED
+            }
+            ?.value == true
     }
 
     private fun Client.Slot.toModel(): SlotModel {
@@ -80,6 +83,7 @@ class KeyguardQuickAffordancePickerRepository(
             enablementInstructions = enablementInstructions ?: emptyList(),
             enablementActionText = enablementActionText,
             enablementActionComponentName = enablementActionComponentName,
+            configureIntent = configureIntent,
         )
     }
 
