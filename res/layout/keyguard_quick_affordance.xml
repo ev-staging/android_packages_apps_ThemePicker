@@ -19,15 +19,15 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="@dimen/keyguard_quick_affordance_picker_item_width"
+    android:layout_width="@dimen/option_item_size"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:gravity="center_horizontal"
     android:clipChildren="false">
 
     <FrameLayout
-        android:layout_width="@dimen/keyguard_quick_affordance_icon_container_size"
-        android:layout_height="@dimen/keyguard_quick_affordance_icon_container_size"
+        android:layout_width="@dimen/option_item_size"
+        android:layout_height="@dimen/option_item_size"
         android:clipChildren="false">
 
         <ImageView

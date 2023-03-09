@@ -83,7 +83,7 @@ object ClockSettingsBinder {
                 launch { viewModel.tabs.collect { tabAdapter.setItems(it) } }
 
                 launch {
-                    viewModel.selectedTabPosition.collect { tab ->
+                    viewModel.selectedTab.collect { tab ->
                         when (tab) {
                             ClockSettingsViewModel.Tab.COLOR -> {
                                 colorOptionContainer.isVisible = true
@@ -108,11 +108,11 @@ object ClockSettingsBinder {
                         when (size) {
                             ClockSize.DYNAMIC -> {
                                 sizeOptions.radioButtonDynamic.isChecked = true
-                                sizeOptions.radioButtonLarge.isChecked = false
+                                sizeOptions.radioButtonSmall.isChecked = false
                             }
-                            ClockSize.LARGE -> {
+                            ClockSize.SMALL -> {
                                 sizeOptions.radioButtonDynamic.isChecked = false
-                                sizeOptions.radioButtonLarge.isChecked = true
+                                sizeOptions.radioButtonSmall.isChecked = true
                             }
                         }
                     }

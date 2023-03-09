@@ -28,7 +28,8 @@ import kotlinx.coroutines.flow.map
  * clocks.
  */
 class ClockPickerInteractor(private val repository: ClockPickerRepository) {
-    val allClocks: Array<ClockMetadataModel> = repository.allClocks
+
+    val allClocks: Flow<List<ClockMetadataModel>> = repository.allClocks
 
     val selectedClock: Flow<ClockMetadataModel> = repository.selectedClock
 
@@ -44,7 +45,7 @@ class ClockPickerInteractor(private val repository: ClockPickerRepository) {
         repository.setClockColor(color)
     }
 
-    fun setClockSize(size: ClockSize) {
+    suspend fun setClockSize(size: ClockSize) {
         repository.setClockSize(size)
     }
 }
