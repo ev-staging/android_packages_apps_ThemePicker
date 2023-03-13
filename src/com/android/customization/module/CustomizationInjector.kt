@@ -20,9 +20,17 @@ import androidx.fragment.app.FragmentActivity
 import com.android.customization.model.theme.OverlayManagerCompat
 import com.android.customization.model.theme.ThemeBundleProvider
 import com.android.customization.model.theme.ThemeManager
+import com.android.customization.picker.clock.data.repository.ClockRegistryProvider
+import com.android.customization.picker.clock.domain.interactor.ClockPickerInteractor
+import com.android.customization.picker.clock.ui.view.ClockViewFactory
+import com.android.customization.picker.clock.ui.viewmodel.ClockCarouselViewModel
+import com.android.customization.picker.clock.ui.viewmodel.ClockSectionViewModel
+import com.android.customization.picker.clock.ui.viewmodel.ClockSettingsViewModel
+import com.android.customization.picker.color.domain.interactor.ColorPickerInteractor
+import com.android.customization.picker.color.ui.viewmodel.ColorPickerViewModel
 import com.android.customization.picker.quickaffordance.domain.interactor.KeyguardQuickAffordancePickerInteractor
-import com.android.systemui.plugins.PluginManager
 import com.android.systemui.shared.clocks.ClockRegistry
+import com.android.wallpaper.model.WallpaperColorsViewModel
 import com.android.wallpaper.module.Injector
 
 interface CustomizationInjector : Injector {
@@ -32,14 +40,47 @@ interface CustomizationInjector : Injector {
         provider: ThemeBundleProvider,
         activity: FragmentActivity,
         overlayManagerCompat: OverlayManagerCompat,
-        logger: ThemesUserEventLogger
+        logger: ThemesUserEventLogger,
     ): ThemeManager
 
     fun getKeyguardQuickAffordancePickerInteractor(
-        context: Context
+        context: Context,
     ): KeyguardQuickAffordancePickerInteractor
 
-    fun getClockRegistry(context: Context): ClockRegistry
+    fun getClockRegistryProvider(context: Context): ClockRegistryProvider
 
-    fun getPluginManager(context: Context): PluginManager
+    fun getClockPickerInteractor(
+        context: Context,
+        clockRegistry: ClockRegistry,
+    ): ClockPickerInteractor
+
+    fun getClockSectionViewModel(
+        context: Context,
+        clockRegistry: ClockRegistry,
+    ): ClockSectionViewModel
+
+    fun getColorPickerInteractor(
+        context: Context,
+        wallpaperColorsViewModel: WallpaperColorsViewModel,
+    ): ColorPickerInteractor
+
+    fun getColorPickerViewModelFactory(
+        context: Context,
+        wallpaperColorsViewModel: WallpaperColorsViewModel,
+    ): ColorPickerViewModel.Factory
+
+    fun getClockCarouselViewModel(
+        context: Context,
+        clockRegistry: ClockRegistry,
+    ): ClockCarouselViewModel
+
+    fun getClockViewFactory(
+        context: Context,
+        registry: ClockRegistry,
+    ): ClockViewFactory
+
+    fun getClockSettingsViewModelFactory(
+        context: Context,
+        registry: ClockRegistry,
+    ): ClockSettingsViewModel.Factory
 }

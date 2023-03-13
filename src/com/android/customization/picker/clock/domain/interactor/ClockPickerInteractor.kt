@@ -18,14 +18,33 @@
 package com.android.customization.picker.clock.domain.interactor
 
 import com.android.customization.picker.clock.data.repository.ClockPickerRepository
+import com.android.customization.picker.clock.shared.ClockSize
 import com.android.customization.picker.clock.shared.model.ClockMetadataModel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 /**
  * Interactor for accessing application clock settings, as well as selecting and configuring custom
  * clocks.
  */
 class ClockPickerInteractor(private val repository: ClockPickerRepository) {
+    val allClocks: Array<ClockMetadataModel> = repository.allClocks
 
-    val selectedClock: Flow<ClockMetadataModel?> = repository.selectedClock
+    val selectedClock: Flow<ClockMetadataModel> = repository.selectedClock
+
+    val selectedClockColor: Flow<Int?> = repository.selectedClock.map { clock -> clock.color }
+
+    val selectedClockSize: Flow<ClockSize> = repository.selectedClockSize
+
+    fun setSelectedClock(clockId: String) {
+        repository.setSelectedClock(clockId)
+    }
+
+    fun setClockColor(color: Int?) {
+        repository.setClockColor(color)
+    }
+
+    fun setClockSize(size: ClockSize) {
+        repository.setClockSize(size)
+    }
 }

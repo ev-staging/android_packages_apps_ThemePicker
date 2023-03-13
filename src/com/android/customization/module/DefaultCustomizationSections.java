@@ -8,26 +8,36 @@ import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.android.customization.model.color.ColorSectionController;
-import com.android.customization.model.color.ColorSectionController2;
 import com.android.customization.model.grid.GridOptionsManager;
 import com.android.customization.model.grid.GridSectionController;
 import com.android.customization.model.mode.DarkModeSectionController;
+import com.android.customization.model.mode.DarkModeSnapshotRestorer;
 import com.android.customization.model.themedicon.ThemedIconSectionController;
 import com.android.customization.model.themedicon.ThemedIconSwitchProvider;
+import com.android.customization.model.themedicon.domain.interactor.ThemedIconInteractor;
+import com.android.customization.model.themedicon.domain.interactor.ThemedIconSnapshotRestorer;
+import com.android.customization.picker.clock.data.repository.ClockRegistryProvider;
+import com.android.customization.picker.color.ui.section.ColorSectionController2;
+import com.android.customization.picker.color.ui.viewmodel.ColorPickerViewModel;
 import com.android.customization.picker.notifications.ui.section.NotificationSectionController;
 import com.android.customization.picker.notifications.ui.viewmodel.NotificationSectionViewModel;
+import com.android.customization.picker.preview.ui.section.PreviewWithClockCarouselSectionController;
+import com.android.customization.picker.preview.ui.section.PreviewWithClockCarouselSectionController.ClockCarouselViewModelProvider;
+import com.android.customization.picker.preview.ui.section.PreviewWithClockCarouselSectionController.ClockViewFactoryProvider;
 import com.android.customization.picker.quickaffordance.domain.interactor.KeyguardQuickAffordancePickerInteractor;
 import com.android.customization.picker.quickaffordance.ui.section.KeyguardQuickAffordanceSectionController;
 import com.android.customization.picker.quickaffordance.ui.viewmodel.KeyguardQuickAffordancePickerViewModel;
+import com.android.customization.picker.settings.ui.section.MoreSettingsSectionController;
+import com.android.wallpaper.config.BaseFlags;
 import com.android.wallpaper.model.CustomizationSectionController;
 import com.android.wallpaper.model.CustomizationSectionController.CustomizationSectionNavigationController;
 import com.android.wallpaper.model.PermissionRequester;
 import com.android.wallpaper.model.WallpaperColorsViewModel;
 import com.android.wallpaper.model.WallpaperPreviewNavigator;
 import com.android.wallpaper.model.WallpaperSectionController;
-import com.android.wallpaper.model.WorkspaceViewModel;
 import com.android.wallpaper.module.CurrentWallpaperInfoFactory;
 import com.android.wallpaper.module.CustomizationSections;
+import com.android.wallpaper.picker.customization.ui.section.ConnectedSectionController;
 import com.android.wallpaper.picker.customization.ui.section.ScreenPreviewSectionController;
 import com.android.wallpaper.picker.customization.ui.section.WallpaperQuickSwitchSectionController;
 import com.android.wallpaper.picker.customization.ui.viewmodel.WallpaperQuickSwitchViewModel;
@@ -39,20 +49,46 @@ import java.util.List;
 /** {@link CustomizationSections} for the customization picker. */
 public final class DefaultCustomizationSections implements CustomizationSections {
 
+    private final ColorPickerViewModel.Factory mColorPickerViewModelFactory;
     private final KeyguardQuickAffordancePickerInteractor mKeyguardQuickAffordancePickerInteractor;
     private final KeyguardQuickAffordancePickerViewModel.Factory
             mKeyguardQuickAffordancePickerViewModelFactory;
     private final NotificationSectionViewModel.Factory mNotificationSectionViewModelFactory;
+    private final BaseFlags mFlags;
+    private final ClockRegistryProvider mClockRegistryProvider;
+    private final PreviewWithClockCarouselSectionController.ClockCarouselViewModelProvider
+            mClockCarouselViewModelProvider;
+    private final PreviewWithClockCarouselSectionController.ClockViewFactoryProvider
+            mClockViewFactoryProvider;
+    private final DarkModeSnapshotRestorer mDarkModeSnapshotRestorer;
+    private final ThemedIconSnapshotRestorer mThemedIconSnapshotRestorer;
+    private final ThemedIconInteractor mThemedIconInteractor;
 
     public DefaultCustomizationSections(
+            ColorPickerViewModel.Factory colorPickerViewModelFactory,
             KeyguardQuickAffordancePickerInteractor keyguardQuickAffordancePickerInteractor,
             KeyguardQuickAffordancePickerViewModel.Factory
                     keyguardQuickAffordancePickerViewModelFactory,
-            NotificationSectionViewModel.Factory notificationSectionViewModelFactory) {
+            NotificationSectionViewModel.Factory notificationSectionViewModelFactory,
+            BaseFlags flags,
+            ClockRegistryProvider clockRegistryProvider,
+            ClockCarouselViewModelProvider clockCarouselViewModelProvider,
+            ClockViewFactoryProvider clockViewFactoryProvider,
+            DarkModeSnapshotRestorer darkModeSnapshotRestorer,
+            ThemedIconSnapshotRestorer themedIconSnapshotRestorer,
+            ThemedIconInteractor themedIconInteractor) {
+        mColorPickerViewModelFactory = colorPickerViewModelFactory;
         mKeyguardQuickAffordancePickerInteractor = keyguardQuickAffordancePickerInteractor;
         mKeyguardQuickAffordancePickerViewModelFactory =
                 keyguardQuickAffordancePickerViewModelFactory;
         mNotificationSectionViewModelFactory = notificationSectionViewModelFactory;
+        mFlags = flags;
+        mClockRegistryProvider = clockRegistryProvider;
+        mClockCarouselViewModelProvider = clockCarouselViewModelProvider;
+        mClockViewFactoryProvider = clockViewFactoryProvider;
+        mDarkModeSnapshotRestorer = darkModeSnapshotRestorer;
+        mThemedIconSnapshotRestorer = themedIconSnapshotRestorer;
+        mThemedIconInteractor = themedIconInteractor;
     }
 
     @Override
@@ -61,7 +97,6 @@ public final class DefaultCustomizationSections implements CustomizationSections
             FragmentActivity activity,
             LifecycleOwner lifecycleOwner,
             WallpaperColorsViewModel wallpaperColorsViewModel,
-            WorkspaceViewModel workspaceViewModel,
             PermissionRequester permissionRequester,
             WallpaperPreviewNavigator wallpaperPreviewNavigator,
             CustomizationSectionNavigationController sectionNavigationController,
@@ -73,25 +108,44 @@ public final class DefaultCustomizationSections implements CustomizationSections
 
         // Wallpaper section.
         sectionControllers.add(
-                new ScreenPreviewSectionController(
+                mFlags.isCustomClocksEnabled(activity)
+                        ? new PreviewWithClockCarouselSectionController(
                         activity,
                         lifecycleOwner,
                         screen,
                         wallpaperInfoFactory,
                         wallpaperColorsViewModel,
-                        displayUtils));
+                        displayUtils,
+                        mClockRegistryProvider,
+                        mClockCarouselViewModelProvider,
+                        mClockViewFactoryProvider,
+                        sectionNavigationController)
+                        : new ScreenPreviewSectionController(
+                                activity,
+                                lifecycleOwner,
+                                screen,
+                                wallpaperInfoFactory,
+                                wallpaperColorsViewModel,
+                                displayUtils,
+                                sectionNavigationController));
 
-        // Theme color section.
-        sectionControllers.add(new ColorSectionController2(
-                activity, wallpaperColorsViewModel, lifecycleOwner, sectionNavigationController));
-
-        // Wallpaper quick switch section.
         sectionControllers.add(
-                new WallpaperQuickSwitchSectionController(
-                        screen,
-                        wallpaperQuickSwitchViewModel,
-                        lifecycleOwner,
-                        sectionNavigationController));
+                new ConnectedSectionController(
+                        // Theme color section.
+                        new ColorSectionController2(
+                                sectionNavigationController,
+                                new ViewModelProvider(
+                                        activity,
+                                        mColorPickerViewModelFactory)
+                                        .get(ColorPickerViewModel.class),
+                                lifecycleOwner),
+                        // Wallpaper quick switch section.
+                        new WallpaperQuickSwitchSectionController(
+                                screen,
+                                wallpaperQuickSwitchViewModel,
+                                lifecycleOwner,
+                                sectionNavigationController),
+                        /* reverseOrderWhenHorizontal= */ true));
 
         switch (screen) {
             case LOCK_SCREEN:
@@ -114,17 +168,25 @@ public final class DefaultCustomizationSections implements CustomizationSections
                                         mNotificationSectionViewModelFactory)
                                         .get(NotificationSectionViewModel.class),
                                 lifecycleOwner));
+
+                // More settings section.
+                sectionControllers.add(new MoreSettingsSectionController());
                 break;
 
             case HOME_SCREEN:
                 // Dark/Light theme section.
-                sectionControllers.add(new DarkModeSectionController(activity,
-                        lifecycleOwner.getLifecycle()));
+                sectionControllers.add(new DarkModeSectionController(
+                        activity,
+                        lifecycleOwner.getLifecycle(),
+                        mDarkModeSnapshotRestorer));
 
                 // Themed app icon section.
-                sectionControllers.add(new ThemedIconSectionController(
-                        ThemedIconSwitchProvider.getInstance(activity), workspaceViewModel,
-                        savedInstanceState));
+                sectionControllers.add(
+                        new ThemedIconSectionController(
+                                ThemedIconSwitchProvider.getInstance(activity),
+                                mThemedIconInteractor,
+                                savedInstanceState,
+                                mThemedIconSnapshotRestorer));
 
                 // App grid section.
                 sectionControllers.add(new GridSectionController(
@@ -140,7 +202,6 @@ public final class DefaultCustomizationSections implements CustomizationSections
             FragmentActivity activity,
             LifecycleOwner lifecycleOwner,
             WallpaperColorsViewModel wallpaperColorsViewModel,
-            WorkspaceViewModel workspaceViewModel,
             PermissionRequester permissionRequester,
             WallpaperPreviewNavigator wallpaperPreviewNavigator,
             CustomizationSectionNavigationController sectionNavigationController,
@@ -149,23 +210,34 @@ public final class DefaultCustomizationSections implements CustomizationSections
         List<CustomizationSectionController<?>> sectionControllers = new ArrayList<>();
 
         // Wallpaper section.
-        sectionControllers.add(new WallpaperSectionController(
-                activity, lifecycleOwner, permissionRequester, wallpaperColorsViewModel,
-                workspaceViewModel, sectionNavigationController, wallpaperPreviewNavigator,
-                savedInstanceState, displayUtils));
+        sectionControllers.add(
+                new WallpaperSectionController(
+                activity,
+                lifecycleOwner,
+                permissionRequester,
+                wallpaperColorsViewModel,
+                mThemedIconInteractor.isActivatedAsLiveData(),
+                sectionNavigationController,
+                wallpaperPreviewNavigator,
+                savedInstanceState,
+                displayUtils));
 
         // Theme color section.
         sectionControllers.add(new ColorSectionController(
                 activity, wallpaperColorsViewModel, lifecycleOwner, savedInstanceState));
 
         // Dark/Light theme section.
-        sectionControllers.add(new DarkModeSectionController(activity,
-                lifecycleOwner.getLifecycle()));
+        sectionControllers.add(new DarkModeSectionController(
+                activity,
+                lifecycleOwner.getLifecycle(),
+                mDarkModeSnapshotRestorer));
 
         // Themed app icon section.
         sectionControllers.add(new ThemedIconSectionController(
-                ThemedIconSwitchProvider.getInstance(activity), workspaceViewModel,
-                savedInstanceState));
+                ThemedIconSwitchProvider.getInstance(activity),
+                mThemedIconInteractor,
+                savedInstanceState,
+                mThemedIconSnapshotRestorer));
 
         // App grid section.
         sectionControllers.add(new GridSectionController(

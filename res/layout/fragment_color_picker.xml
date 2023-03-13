@@ -17,7 +17,6 @@
 
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
@@ -31,21 +30,28 @@
 
     </FrameLayout>
 
-    <com.android.wallpaper.picker.DisplayAspectRatioFrameLayout
+    <com.android.wallpaper.picker.DisplayAspectRatioLinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
+        android:layout_marginHorizontal="24dp"
         android:paddingTop="36dp"
-        android:paddingBottom="40dp">
+        android:paddingBottom="40dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
 
         <include
-            android:id="@+id/preview"
+            android:id="@+id/lock_preview"
             layout="@layout/wallpaper_preview_card"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_gravity="center"/>
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
 
-    </com.android.wallpaper.picker.DisplayAspectRatioFrameLayout>
+        <include
+            android:id="@+id/home_preview"
+            layout="@layout/wallpaper_preview_card"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+    </com.android.wallpaper.picker.DisplayAspectRatioLinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -94,13 +100,12 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
-            <androidx.viewpager2.widget.ViewPager2
-                android:id="@+id/color_section_view_pager"
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/color_options"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/color_options_container_top_margin"
-                android:clipChildren="false"
-                android:clipToPadding="false"/>
+                android:clipToPadding="false"
+                android:paddingHorizontal="16dp" />
 
             <!--
             This is just an invisible placeholder put in place so that the parent keeps its height
@@ -112,7 +117,7 @@
             It's critical for any TextViews inside the included layout to have text.
             -->
             <include
-                layout="@layout/color_option"
+                layout="@layout/color_option_with_background"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:visibility="invisible" />
