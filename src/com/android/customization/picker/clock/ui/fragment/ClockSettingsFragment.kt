@@ -22,24 +22,17 @@ import android.view.ViewGroup
 import androidx.cardview.widget.CardView
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.get
-import androidx.lifecycle.lifecycleScope
 import com.android.customization.module.ThemePickerInjector
-import com.android.customization.picker.clock.ui.binder.ClockCarouselViewBinder
 import com.android.customization.picker.clock.ui.binder.ClockSettingsBinder
-import com.android.customization.picker.clock.ui.view.ClockCarouselView
 import com.android.systemui.shared.clocks.shared.model.ClockPreviewConstants
 import com.android.wallpaper.R
-import com.android.wallpaper.model.WallpaperColorsViewModel
 import com.android.wallpaper.module.InjectorProvider
 import com.android.wallpaper.picker.AppbarFragment
 import com.android.wallpaper.picker.customization.ui.binder.ScreenPreviewBinder
 import com.android.wallpaper.picker.customization.ui.viewmodel.ScreenPreviewViewModel
 import com.android.wallpaper.util.PreviewUtils
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ClockSettingsFragment : AppbarFragment() {
@@ -70,7 +63,7 @@ class ClockSettingsFragment : AppbarFragment() {
         val injector = InjectorProvider.getInjector() as ThemePickerInjector
 
         val lockScreenView: CardView = view.requireViewById(R.id.lock_preview)
-        val colorViewModel = ViewModelProvider(activity)[WallpaperColorsViewModel::class.java]
+        val colorViewModel = injector.getWallpaperColorsViewModel()
         val displayUtils = injector.getDisplayUtils(context)
         ScreenPreviewBinder.bind(
                 activity = activity,
@@ -107,7 +100,10 @@ class ClockSettingsFragment : AppbarFragment() {
                             Bundle().apply {
                                 // Hide the clock from the system UI rendered preview so we can
                                 // place the carousel on top of it.
-                                putBoolean(ClockPreviewConstants.KEY_HIDE_CLOCK, true)
+                                putBoolean(
+                                    ClockPreviewConstants.KEY_HIDE_CLOCK,
+                                    true,
+                                )
                             }
                         },
                     ),
@@ -116,31 +112,19 @@ class ClockSettingsFragment : AppbarFragment() {
             )
             .show()
 
-        val carouselView: ClockCarouselView = view.requireViewById(R.id.clock_carousel_view)
-        lifecycleScope.launch {
-            val registry =
-                withContext(Dispatchers.IO) { injector.getClockRegistryProvider(context).get() }
-            val clockViewFactory = injector.getClockViewFactory(context, registry)
-            ClockCarouselViewBinder.bind(
-                    view = carouselView,
-                    viewModel = injector.getClockCarouselViewModel(context, registry),
-                    clockViewFactory = { clockId -> clockViewFactory.getView(clockId) },
-                    lifecycleOwner = this@ClockSettingsFragment,
+        ClockSettingsBinder.bind(
+            view,
+            ViewModelProvider(
+                    requireActivity(),
+                    injector.getClockSettingsViewModelFactory(
+                        context,
+                        injector.getWallpaperColorsViewModel(),
+                    ),
                 )
-                .show()
-            ClockSettingsBinder.bind(
-                view,
-                ViewModelProvider(
-                        requireActivity(),
-                        injector.getClockSettingsViewModelFactory(
-                            context = context,
-                            registry = registry,
-                        ),
-                    )
-                    .get(),
-                this@ClockSettingsFragment,
-            )
-        }
+                .get(),
+            injector.getClockViewFactory(activity),
+            this@ClockSettingsFragment,
+        )
 
         return view
     }

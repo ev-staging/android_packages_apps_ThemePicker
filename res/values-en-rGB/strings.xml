@@ -28,6 +28,7 @@
     <string name="clock_size_dynamic" msgid="1023930312455061642">"Dynamic"</string>
     <string name="clock_size_dynamic_description" msgid="2776620745774561662">"Clock size changes according to lock screen content"</string>
     <string name="clock_size_large" msgid="3143248715744138979">"Large"</string>
+    <string name="clock_size_small" msgid="2280449912094164133">"Small"</string>
     <string name="grid_title" msgid="1688173478777254123">"App grid"</string>
     <string name="apply_theme_btn" msgid="6293081192321303991">"Apply"</string>
     <string name="edit_custom_theme_lbl" msgid="5211377705710775224">"Tap to edit"</string>
@@ -114,6 +115,7 @@
     <string name="hide_notifications_on_lock_screen" msgid="7413548956484779174">"Hide notifications on the lock screen"</string>
     <string name="more_settings_section_title" msgid="8524741850115625404">"More options"</string>
     <string name="more_settings_section_description" msgid="8787768566854880683">"Text on lock screen, Now Playing and more"</string>
-    <!-- no translation found for more_colors (3191071655353004591) -->
-    <skip />
+    <string name="more_colors" msgid="3191071655353004591">"More colours"</string>
+    <string name="content_description_default_color_option" msgid="7011899327541080695">"Default colour option"</string>
+    <string name="content_description_color_option" msgid="4169813692012119578">"Colour option <xliff:g id="ID_1">%1$d</xliff:g>"</string>
 </resources>

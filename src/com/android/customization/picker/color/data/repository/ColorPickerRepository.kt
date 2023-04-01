@@ -25,7 +25,13 @@ import kotlinx.coroutines.flow.Flow
  * system color.
  */
 interface ColorPickerRepository {
+
+    /** List of wallpaper and preset color options on the device, categorized by Color Type */
     val colorOptions: Flow<Map<ColorType, List<ColorOptionModel>>>
 
-    fun select(colorOptionModel: ColorOptionModel)
+    /** Selects a color option with optimistic update */
+    suspend fun select(colorOptionModel: ColorOptionModel)
+
+    /** Returns the current selected color option based on system settings */
+    fun getCurrentColorOption(): ColorOptionModel
 }

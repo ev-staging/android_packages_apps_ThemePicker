@@ -36,8 +36,41 @@
     <!-- Title of a section of the customization picker where the user can configure Clock face. [CHAR LIMIT=19] -->
     <string name="clock_settings_title">Clock Settings</string>
 
+    <!-- Title of a section of the customization picker where the user can configure clock color and size. [CHAR LIMIT=20] -->
+    <string name="clock_color_and_size_title">Clock color &amp; size</string>
+
+    <!-- Description of a section of the customization picker where the user can configure clock color and size, e.g. Violet, small. [CHAR LIMIT=NONE] -->
+    <string name="clock_color_and_size_description"><xliff:g name="color">%1$s</xliff:g>, <xliff:g name="size">%2$s</xliff:g></string>
+
     <!-- Title of a tab to change the clock color. [CHAR LIMIT=15] -->
     <string name="clock_color">Color</string>
+
+    <!-- Title of a clock color red option that will appear in the description of the custom clock section. [CHAR LIMIT=15] -->
+    <string name="clock_color_red">Red</string>
+
+    <!-- Title of a clock color orange option that will appear in the description of the custom clock section. [CHAR LIMIT=15] -->
+    <string name="clock_color_orange">Orange</string>
+
+    <!-- Title of a clock color yellow option that will appear in the description of the custom clock section. [CHAR LIMIT=15] -->
+    <string name="clock_color_yellow">Yellow</string>
+
+    <!-- Title of a clock color green option that will appear in the description of the custom clock section. [CHAR LIMIT=15] -->
+    <string name="clock_color_green">Green</string>
+
+    <!-- Title of a clock color blue option that will appear in the description of the custom clock section. [CHAR LIMIT=15] -->
+    <string name="clock_color_blue">Blue</string>
+
+    <!-- Title of a clock color indigo option that will appear in the description of the custom clock section. [CHAR LIMIT=15] -->
+    <string name="clock_color_indigo">Indigo</string>
+
+    <!-- Title of a clock color violet option that will appear in the description of the custom clock section. [CHAR LIMIT=15] -->
+    <string name="clock_color_violet">Violet</string>
+
+    <!-- Title of a clock color grey option that will appear in the description of the custom clock section. [CHAR LIMIT=15] -->
+    <string name="clock_color_gray">Grey</string>
+
+    <!-- Title of a clock color teal option that will appear in the description of the custom clock section. [CHAR LIMIT=15] -->
+    <string name="clock_color_teal">Teal</string>
 
     <!-- Title of a tab to change the clock size. [CHAR LIMIT=15] -->
     <string name="clock_size">Size</string>
@@ -50,6 +83,9 @@
 
     <!-- Title of a radio button to apply clock size large. [CHAR LIMIT=15] -->
     <string name="clock_size_large">Large</string>
+
+    <!-- Title of a radio button to apply clock size small. [CHAR LIMIT=15] -->
+    <string name="clock_size_small">Small</string>
 
     <!-- Title of a section of the customization picker where the user can select a Grid size for
         the home screen. [CHAR LIMIT=15] -->
