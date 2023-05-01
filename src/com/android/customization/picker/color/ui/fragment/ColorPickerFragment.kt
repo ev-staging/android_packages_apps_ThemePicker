@@ -105,7 +105,8 @@ class ColorPickerFragment : AppbarFragment() {
                     },
                 ),
             lifecycleOwner = this,
-            offsetToStart = displayUtils.isOnWallpaperDisplay(requireActivity()),
+            offsetToStart =
+                displayUtils.isSingleDisplayOrUnfoldedHorizontalHinge(requireActivity()),
         )
         ScreenPreviewBinder.bind(
             activity = requireActivity(),
@@ -136,7 +137,8 @@ class ColorPickerFragment : AppbarFragment() {
                     },
                 ),
             lifecycleOwner = this,
-            offsetToStart = displayUtils.isOnWallpaperDisplay(requireActivity()),
+            offsetToStart =
+                displayUtils.isSingleDisplayOrUnfoldedHorizontalHinge(requireActivity()),
         )
         val darkModeToggleContainerView: FrameLayout =
             view.requireViewById(R.id.dark_mode_toggle_container)
@@ -154,5 +156,9 @@ class ColorPickerFragment : AppbarFragment() {
 
     override fun getDefaultTitle(): CharSequence {
         return requireContext().getString(R.string.color_picker_title)
+    }
+
+    override fun getToolbarColorId(): Int {
+        return android.R.color.transparent
     }
 }

@@ -78,7 +78,7 @@ public class OptionSelectorController<T extends CustomizationOption<T>> {
         int CENTER_CHANGE_COLOR_WHEN_NOT_SELECTED = 3;
     }
 
-    private float mLinearLayoutHorizontalDisplayOptionsMax;
+    private final float mLinearLayoutHorizontalDisplayOptionsMax;
 
     private final RecyclerView mContainer;
     private final List<T> mOptions;

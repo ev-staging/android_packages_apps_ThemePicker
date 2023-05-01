@@ -22,6 +22,7 @@ import android.widget.SeekBar
 import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -32,14 +33,19 @@ import com.android.customization.picker.clock.ui.adapter.ClockSettingsTabAdapter
 import com.android.customization.picker.clock.ui.view.ClockSizeRadioButtonGroup
 import com.android.customization.picker.clock.ui.view.ClockViewFactory
 import com.android.customization.picker.clock.ui.viewmodel.ClockSettingsViewModel
-import com.android.customization.picker.color.ui.adapter.ColorOptionAdapter
+import com.android.customization.picker.color.ui.binder.ColorOptionIconBinder
+import com.android.customization.picker.color.ui.viewmodel.ColorOptionIconViewModel
 import com.android.customization.picker.common.ui.view.ItemSpacing
 import com.android.wallpaper.R
+import com.android.wallpaper.picker.option.ui.adapter.OptionItemAdapter
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 
 /** Bind between the clock settings screen and its view model. */
 object ClockSettingsBinder {
+    private const val SLIDER_ENABLED_ALPHA = 1f
+    private const val SLIDER_DISABLED_ALPHA = .3f
+
     fun bind(
         view: View,
         viewModel: ClockSettingsViewModel,
@@ -55,7 +61,15 @@ object ClockSettingsBinder {
         tabView.addItemDecoration(ItemSpacing(ItemSpacing.TAB_ITEM_SPACING_DP))
 
         val colorOptionContainerView: RecyclerView = view.requireViewById(R.id.color_options)
-        val colorOptionAdapter = ColorOptionAdapter()
+        val colorOptionAdapter =
+            OptionItemAdapter(
+                layoutResourceId = R.layout.color_option_2,
+                lifecycleOwner = lifecycleOwner,
+                bindIcon = { foregroundView: View, colorIcon: ColorOptionIconViewModel ->
+                    val viewGroup = foregroundView as? ViewGroup
+                    viewGroup?.let { ColorOptionIconBinder.bind(viewGroup, colorIcon) }
+                }
+            )
         colorOptionContainerView.adapter = colorOptionAdapter
         colorOptionContainerView.layoutManager =
             LinearLayoutManager(view.context, RecyclerView.HORIZONTAL, false)
@@ -165,17 +179,27 @@ object ClockSettingsBinder {
                 }
 
                 launch {
-                    viewModel.isSliderEnabled.collect { isEnabled -> slider.isEnabled = isEnabled }
+                    viewModel.isSliderEnabled.collect { isEnabled ->
+                        slider.isEnabled = isEnabled
+                        slider.alpha =
+                            if (isEnabled) SLIDER_ENABLED_ALPHA else SLIDER_DISABLED_ALPHA
+                    }
                 }
             }
         }
 
-        lifecycleOwner.lifecycleScope.launch {
-            lifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-                clockViewFactory.registerTimeTicker()
+        lifecycleOwner.lifecycle.addObserver(
+            LifecycleEventObserver { source, event ->
+                when (event) {
+                    Lifecycle.Event.ON_RESUME -> {
+                        clockViewFactory.registerTimeTicker(source)
+                    }
+                    Lifecycle.Event.ON_PAUSE -> {
+                        clockViewFactory.unregisterTimeTicker(source)
+                    }
+                    else -> {}
+                }
             }
-            // When paused
-            clockViewFactory.unregisterTimeTicker()
-        }
+        )
     }
 }

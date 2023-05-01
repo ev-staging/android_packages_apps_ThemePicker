@@ -34,14 +34,26 @@ class ClockSettingsViewModelTest {
 
     private lateinit var context: Context
     private lateinit var colorPickerInteractor: ColorPickerInteractor
+    private lateinit var clockPickerInteractor: ClockPickerInteractor
     private lateinit var underTest: ClockSettingsViewModel
     private lateinit var colorMap: Map<String, ClockColorViewModel>
+    // We make the condition that CLOCK_ID_3 is not reactive to tone
+    private val getIsReactiveToTone: (clockId: String?) -> Boolean = { clockId ->
+        when (clockId) {
+            FakeClockPickerRepository.CLOCK_ID_0 -> true
+            FakeClockPickerRepository.CLOCK_ID_1 -> true
+            FakeClockPickerRepository.CLOCK_ID_2 -> true
+            FakeClockPickerRepository.CLOCK_ID_3 -> false
+            else -> false
+        }
+    }
 
     @Before
     fun setUp() {
         val testDispatcher = StandardTestDispatcher()
         Dispatchers.setMain(testDispatcher)
         context = InstrumentationRegistry.getInstrumentation().targetContext
+        clockPickerInteractor = ClockPickerInteractor(FakeClockPickerRepository())
         colorPickerInteractor =
             ColorPickerInteractor(
                 repository = FakeColorPickerRepository(context = context),
@@ -54,11 +66,14 @@ class ClockSettingsViewModelTest {
         underTest =
             ClockSettingsViewModel.Factory(
                     context = context,
-                    clockPickerInteractor = ClockPickerInteractor(FakeClockPickerRepository()),
+                    clockPickerInteractor = clockPickerInteractor,
                     colorPickerInteractor = colorPickerInteractor,
+                    getIsReactiveToTone = getIsReactiveToTone,
                 )
                 .create(ClockSettingsViewModel::class.java)
         colorMap = ClockColorViewModel.getPresetColorMap(context.resources)
+
+        clockPickerInteractor.setSelectedClock(FakeClockPickerRepository.CLOCK_ID_0)
     }
 
     @After
@@ -88,15 +103,20 @@ class ClockSettingsViewModelTest {
         val observedSeedColor = collectLastValue(underTest.seedColor)
         // Advance COLOR_OPTIONS_EVENT_UPDATE_DELAY_MILLIS since there is a delay from colorOptions
         advanceTimeBy(ClockSettingsViewModel.COLOR_OPTIONS_EVENT_UPDATE_DELAY_MILLIS)
-        assertThat(observedClockColorOptions()!![0].isSelected).isTrue()
-        assertThat(observedClockColorOptions()!![0].onClick).isNull()
+        val option0IsSelected = collectLastValue(observedClockColorOptions()!![0].isSelected)
+        val option0OnClicked = collectLastValue(observedClockColorOptions()!![0].onClicked)
+        assertThat(option0IsSelected()).isTrue()
+        assertThat(option0OnClicked()).isNull()
         assertThat(observedSelectedColorOptionPosition()).isEqualTo(0)
 
-        observedClockColorOptions()!![1].onClick?.invoke()
+        val option1OnClickedBefore = collectLastValue(observedClockColorOptions()!![1].onClicked)
+        option1OnClickedBefore()?.invoke()
         // Advance COLOR_OPTIONS_EVENT_UPDATE_DELAY_MILLIS since there is a delay from colorOptions
         advanceTimeBy(ClockSettingsViewModel.COLOR_OPTIONS_EVENT_UPDATE_DELAY_MILLIS)
-        assertThat(observedClockColorOptions()!![1].isSelected).isTrue()
-        assertThat(observedClockColorOptions()!![1].onClick).isNull()
+        val option1IsSelected = collectLastValue(observedClockColorOptions()!![1].isSelected)
+        val option1OnClickedAfter = collectLastValue(observedClockColorOptions()!![1].onClicked)
+        assertThat(option1IsSelected()).isTrue()
+        assertThat(option1OnClickedAfter()).isNull()
         assertThat(observedSelectedColorOptionPosition()).isEqualTo(1)
         assertThat(observedSliderProgress())
             .isEqualTo(ClockMetadataModel.DEFAULT_COLOR_TONE_PROGRESS)
@@ -120,10 +140,12 @@ class ClockSettingsViewModelTest {
         val observedSeedColor = collectLastValue(underTest.seedColor)
         // Advance COLOR_OPTIONS_EVENT_UPDATE_DELAY_MILLIS since there is a delay from colorOptions
         advanceTimeBy(ClockSettingsViewModel.COLOR_OPTIONS_EVENT_UPDATE_DELAY_MILLIS)
-        assertThat(observedClockColorOptions()!![0].isSelected).isTrue()
+        val option0IsSelected = collectLastValue(observedClockColorOptions()!![0].isSelected)
+        assertThat(option0IsSelected()).isTrue()
         assertThat(observedIsSliderEnabled()).isFalse()
 
-        observedClockColorOptions()!![1].onClick?.invoke()
+        val option1OnClicked = collectLastValue(observedClockColorOptions()!![1].onClicked)
+        option1OnClicked()?.invoke()
 
         // Advance COLOR_OPTIONS_EVENT_UPDATE_DELAY_MILLIS since there is a delay from colorOptions
         advanceTimeBy(ClockSettingsViewModel.COLOR_OPTIONS_EVENT_UPDATE_DELAY_MILLIS)
@@ -152,5 +174,22 @@ class ClockSettingsViewModelTest {
 
         underTest.setClockSize(ClockSize.SMALL)
         assertThat(observedClockSize()).isEqualTo(ClockSize.SMALL)
+    }
+
+    @Test
+    fun getIsReactiveToTone() = runTest {
+        val observedClockColorOptions = collectLastValue(underTest.colorOptions)
+        val isSliderEnabled = collectLastValue(underTest.isSliderEnabled)
+        // Advance COLOR_OPTIONS_EVENT_UPDATE_DELAY_MILLIS since there is a delay from colorOptions
+        advanceTimeBy(ClockSettingsViewModel.COLOR_OPTIONS_EVENT_UPDATE_DELAY_MILLIS)
+        val option1OnClicked = collectLastValue(observedClockColorOptions()!![1].onClicked)
+        option1OnClicked()?.invoke()
+
+        clockPickerInteractor.setSelectedClock(FakeClockPickerRepository.CLOCK_ID_0)
+        assertThat(isSliderEnabled()).isTrue()
+
+        // We make the condition that CLOCK_ID_0 is not reactive to tone
+        clockPickerInteractor.setSelectedClock(FakeClockPickerRepository.CLOCK_ID_3)
+        assertThat(isSliderEnabled()).isFalse()
     }
 }

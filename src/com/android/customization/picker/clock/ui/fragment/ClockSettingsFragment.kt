@@ -108,17 +108,18 @@ class ClockSettingsFragment : AppbarFragment() {
                         },
                     ),
                 lifecycleOwner = this,
-                offsetToStart = displayUtils.isOnWallpaperDisplay(activity),
+                offsetToStart = displayUtils.isSingleDisplayOrUnfoldedHorizontalHinge(activity),
             )
             .show()
 
         ClockSettingsBinder.bind(
             view,
             ViewModelProvider(
-                    requireActivity(),
+                    activity,
                     injector.getClockSettingsViewModelFactory(
                         context,
                         injector.getWallpaperColorsViewModel(),
+                        injector.getClockViewFactory(activity),
                     ),
                 )
                 .get(),
