@@ -30,14 +30,6 @@ import com.android.wallpaper.R
 import kotlinx.coroutines.launch
 
 object ClockCarouselViewBinder {
-    /**
-     * The binding is used by the view where there is an action executed from another view, e.g.
-     * toggling show/hide of the view that the binder is holding.
-     */
-    interface Binding {
-        fun show()
-        fun hide()
-    }
 
     @JvmStatic
     fun bind(
@@ -46,7 +38,7 @@ object ClockCarouselViewBinder {
         viewModel: ClockCarouselViewModel,
         clockViewFactory: ClockViewFactory,
         lifecycleOwner: LifecycleOwner,
-    ): Binding {
+    ) {
         val singleClockHostView =
             singleClockView.requireViewById<FrameLayout>(R.id.single_clock_host_view)
         lifecycleOwner.lifecycleScope.launch {
@@ -63,6 +55,12 @@ object ClockCarouselViewBinder {
                             onClockSelected = { clockId -> viewModel.setSelectedClock(clockId) },
                             getPreviewRatio = { clockViewFactory.getRatio() }
                         )
+                    }
+                }
+
+                launch {
+                    viewModel.allClockIds.collect {
+                        it.forEach { clockId -> clockViewFactory.updateTimeFormat(clockId) }
                     }
                 }
 
@@ -97,7 +95,9 @@ object ClockCarouselViewBinder {
             LifecycleEventObserver { source, event ->
                 when (event) {
                     Lifecycle.Event.ON_RESUME -> {
-                        clockViewFactory.registerTimeTicker(source)
+                        clockViewFactory.registerTimeTicker(source) {
+                            !carouselView.isCarouselInTransition
+                        }
                     }
                     Lifecycle.Event.ON_PAUSE -> {
                         clockViewFactory.unregisterTimeTicker(source)
@@ -106,15 +106,5 @@ object ClockCarouselViewBinder {
                 }
             }
         )
-
-        return object : Binding {
-            override fun show() {
-                viewModel.showClockCarousel(true)
-            }
-
-            override fun hide() {
-                viewModel.showClockCarousel(false)
-            }
-        }
     }
 }

@@ -15,6 +15,7 @@
  */
 package com.android.customization.picker.clock.ui.binder
 
+import android.content.res.Configuration
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
@@ -63,11 +64,14 @@ object ClockSettingsBinder {
         val colorOptionContainerView: RecyclerView = view.requireViewById(R.id.color_options)
         val colorOptionAdapter =
             OptionItemAdapter(
-                layoutResourceId = R.layout.color_option_2,
+                layoutResourceId = R.layout.clock_color_option,
                 lifecycleOwner = lifecycleOwner,
                 bindIcon = { foregroundView: View, colorIcon: ColorOptionIconViewModel ->
                     val viewGroup = foregroundView as? ViewGroup
-                    viewGroup?.let { ColorOptionIconBinder.bind(viewGroup, colorIcon) }
+                    val night =
+                        (view.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK ==
+                            Configuration.UI_MODE_NIGHT_YES)
+                    viewGroup?.let { ColorOptionIconBinder.bind(viewGroup, colorIcon, night) }
                 }
             )
         colorOptionContainerView.adapter = colorOptionAdapter
