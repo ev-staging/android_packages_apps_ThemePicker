@@ -26,6 +26,7 @@ import com.android.customization.module.ThemePickerInjector
 import com.android.customization.picker.clock.ui.binder.ClockSettingsBinder
 import com.android.systemui.shared.clocks.shared.model.ClockPreviewConstants
 import com.android.wallpaper.R
+import com.android.wallpaper.module.CustomizationSections
 import com.android.wallpaper.module.InjectorProvider
 import com.android.wallpaper.picker.AppbarFragment
 import com.android.wallpaper.picker.customization.ui.binder.ScreenPreviewBinder
@@ -106,15 +107,18 @@ class ClockSettingsFragment : AppbarFragment() {
                             )
                         }
                     },
+                    wallpaperInteractor = injector.getWallpaperInteractor(requireContext()),
+                    screen = CustomizationSections.Screen.LOCK_SCREEN,
                 ),
             lifecycleOwner = this,
             offsetToStart = displayUtils.isSingleDisplayOrUnfoldedHorizontalHinge(activity),
+            onPreviewDirty = { activity.recreate() },
         )
 
         ClockSettingsBinder.bind(
             view,
             ViewModelProvider(
-                    activity,
+                    this,
                     injector.getClockSettingsViewModelFactory(
                         context,
                         injector.getWallpaperColorsViewModel(),

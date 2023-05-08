@@ -15,30 +15,43 @@
  */
 package com.android.customization.picker.clock.ui.viewmodel
 
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
 import com.android.customization.picker.clock.domain.interactor.ClockPickerInteractor
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 /**
  * Clock carousel view model that provides data for the carousel of clock previews. When there is
  * only one item, we should show a single clock preview instead of a carousel.
  */
-class ClockCarouselViewModel(
+class ClockCarouselViewModel
+constructor(
     private val interactor: ClockPickerInteractor,
-) {
+    private val backgroundDispatcher: CoroutineDispatcher,
+) : ViewModel() {
     @OptIn(ExperimentalCoroutinesApi::class)
-    val allClockIds: Flow<List<String>> =
-        interactor.allClocks.mapLatest { allClocks ->
-            // Delay to avoid the case that the full list of clocks is not initiated.
-            delay(CLOCKS_EVENT_UPDATE_DELAY_MILLIS)
-            allClocks.map { it.clockId }
-        }
+    val allClockIds: StateFlow<List<String>> =
+        interactor.allClocks
+            .mapLatest { allClocks ->
+                // Delay to avoid the case that the full list of clocks is not initiated.
+                delay(CLOCKS_EVENT_UPDATE_DELAY_MILLIS)
+                allClocks.map { it.clockId }
+            }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     val seedColor: Flow<Int?> = interactor.seedColor
 
@@ -68,11 +81,35 @@ class ClockCarouselViewModel(
             .map { allClockIds -> if (allClockIds.size == 1) allClockIds[0] else null }
             .mapNotNull { it }
 
+    private var setSelectedClockJob: Job? = null
     fun setSelectedClock(clockId: String) {
-        interactor.setSelectedClock(clockId)
+        setSelectedClockJob?.cancel()
+        setSelectedClockJob =
+            viewModelScope.launch(backgroundDispatcher) {
+                delay(SET_SELECTED_CLOCK_DELAY_MILLIS)
+                interactor.setSelectedClock(clockId)
+            }
+    }
+
+    class Factory(
+        private val interactor: ClockPickerInteractor,
+        private val backgroundDispatcher: CoroutineDispatcher,
+    ) : ViewModelProvider.Factory {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            @Suppress("UNCHECKED_CAST")
+            return ClockCarouselViewModel(
+                interactor = interactor,
+                backgroundDispatcher = backgroundDispatcher,
+            )
+                as T
+        }
     }
 
     companion object {
         const val CLOCKS_EVENT_UPDATE_DELAY_MILLIS: Long = 100
+
+        // In the case if the user scroll the clock carousel frequently, we make a delay for
+        // setting the selected clock to avoid too many heavy calls.
+        const val SET_SELECTED_CLOCK_DELAY_MILLIS: Long = 650
     }
 }

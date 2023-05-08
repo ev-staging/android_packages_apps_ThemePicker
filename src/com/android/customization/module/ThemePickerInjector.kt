@@ -26,6 +26,7 @@ import androidx.activity.ComponentActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.get
 import com.android.customization.model.color.ColorCustomizationManager
 import com.android.customization.model.color.ColorOptionsProvider
 import com.android.customization.model.grid.GridOptionsManager
@@ -79,11 +80,8 @@ import com.android.wallpaper.picker.customization.data.content.WallpaperClientIm
 import com.android.wallpaper.picker.customization.data.repository.WallpaperRepository
 import com.android.wallpaper.picker.customization.domain.interactor.WallpaperInteractor
 import com.android.wallpaper.picker.undo.domain.interactor.SnapshotRestorer
-import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 
-@OptIn(DelicateCoroutinesApi::class)
 open class ThemePickerInjector : WallpaperPicker2Injector(), CustomizationInjector {
     private var customizationSections: CustomizationSections? = null
     private var userEventLogger: UserEventLogger? = null
@@ -102,7 +100,7 @@ open class ThemePickerInjector : WallpaperPicker2Injector(), CustomizationInject
     private var clockRegistry: ClockRegistry? = null
     private var clockPickerInteractor: ClockPickerInteractor? = null
     private var clockSectionViewModel: ClockSectionViewModel? = null
-    private var clockCarouselViewModel: ClockCarouselViewModel? = null
+    private var clockCarouselViewModelFactory: ClockCarouselViewModel.Factory? = null
     private var clockViewFactory: ClockViewFactory? = null
     private var notificationsInteractor: NotificationsInteractor? = null
     private var notificationSectionViewModelFactory: NotificationSectionViewModel.Factory? = null
@@ -119,6 +117,14 @@ open class ThemePickerInjector : WallpaperPicker2Injector(), CustomizationInject
     private var gridScreenViewModelFactory: GridScreenViewModel.Factory? = null
 
     override fun getCustomizationSections(activity: ComponentActivity): CustomizationSections {
+        val clockCarouselViewModel =
+            ViewModelProvider(
+                    activity,
+                    getClockCarouselViewModelFactory(
+                        getClockPickerInteractor(activity.applicationContext),
+                    ),
+                )
+                .get() as ClockCarouselViewModel
         return customizationSections
             ?: DefaultCustomizationSections(
                     getColorPickerViewModelFactory(
@@ -131,7 +137,7 @@ open class ThemePickerInjector : WallpaperPicker2Injector(), CustomizationInject
                         interactor = getNotificationsInteractor(activity),
                     ),
                     getFlags(),
-                    getClockCarouselViewModel(activity),
+                    clockCarouselViewModel,
                     getClockViewFactory(activity),
                     getDarkModeSnapshotRestorer(activity),
                     getThemedIconSnapshotRestorer(activity),
@@ -222,7 +228,7 @@ open class ThemePickerInjector : WallpaperPicker2Injector(), CustomizationInject
             ?: WallpaperInteractor(
                     repository =
                         WallpaperRepository(
-                            scope = GlobalScope,
+                            scope = getApplicationCoroutineScope(),
                             client = WallpaperClientImpl(context = context),
                             wallpaperPreferences = getPreferences(context = context),
                             backgroundDispatcher = Dispatchers.IO,
@@ -253,6 +259,7 @@ open class ThemePickerInjector : WallpaperPicker2Injector(), CustomizationInject
             ?: KeyguardQuickAffordancePickerViewModel.Factory(
                     context,
                     getKeyguardQuickAffordancePickerInteractor(context),
+                    getWallpaperInteractor(context),
                     getCurrentWallpaperInfoFactory(context),
                 ) { intent ->
                     context.startActivity(intent)
@@ -282,7 +289,7 @@ open class ThemePickerInjector : WallpaperPicker2Injector(), CustomizationInject
         }
     }
 
-    protected fun getKeyguardQuickAffordancePickerProviderClient(
+    private fun getKeyguardQuickAffordancePickerProviderClient(
         context: Context
     ): CustomizationProviderClient {
         return customizationProviderClient
@@ -317,7 +324,7 @@ open class ThemePickerInjector : WallpaperPicker2Injector(), CustomizationInject
         return clockRegistry
             ?: ClockRegistryProvider(
                     context = context,
-                    coroutineScope = GlobalScope,
+                    coroutineScope = getApplicationCoroutineScope(),
                     mainDispatcher = Dispatchers.Main,
                     backgroundDispatcher = Dispatchers.IO,
                 )
@@ -333,7 +340,7 @@ open class ThemePickerInjector : WallpaperPicker2Injector(), CustomizationInject
                     ClockPickerRepositoryImpl(
                         secureSettingsRepository = getSecureSettingsRepository(context),
                         registry = getClockRegistry(context),
-                        scope = GlobalScope,
+                        scope = getApplicationCoroutineScope(),
                     ),
                 )
                 .also { clockPickerInteractor = it }
@@ -346,10 +353,12 @@ open class ThemePickerInjector : WallpaperPicker2Injector(), CustomizationInject
             }
     }
 
-    override fun getClockCarouselViewModel(context: Context): ClockCarouselViewModel {
-        return clockCarouselViewModel
-            ?: ClockCarouselViewModel(getClockPickerInteractor(context)).also {
-                clockCarouselViewModel = it
+    override fun getClockCarouselViewModelFactory(
+        interactor: ClockPickerInteractor,
+    ): ClockCarouselViewModel.Factory {
+        return clockCarouselViewModelFactory
+            ?: ClockCarouselViewModel.Factory(interactor, Dispatchers.IO).also {
+                clockCarouselViewModelFactory = it
             }
     }
 
@@ -358,14 +367,14 @@ open class ThemePickerInjector : WallpaperPicker2Injector(), CustomizationInject
             ?: ClockViewFactory(activity, getClockRegistry(activity)).also { clockViewFactory = it }
     }
 
-    protected fun getNotificationsInteractor(
+    private fun getNotificationsInteractor(
         context: Context,
     ): NotificationsInteractor {
         return notificationsInteractor
             ?: NotificationsInteractor(
                     repository =
                         NotificationsRepository(
-                            scope = GlobalScope,
+                            scope = getApplicationCoroutineScope(),
                             backgroundDispatcher = Dispatchers.IO,
                             secureSettingsRepository = getSecureSettingsRepository(context),
                         ),
@@ -493,10 +502,10 @@ open class ThemePickerInjector : WallpaperPicker2Injector(), CustomizationInject
     ): GridInteractor {
         return gridInteractor
             ?: GridInteractor(
-                    applicationScope = GlobalScope,
+                    applicationScope = getApplicationCoroutineScope(),
                     repository =
                         GridRepositoryImpl(
-                            applicationScope = GlobalScope,
+                            applicationScope = getApplicationCoroutineScope(),
                             manager = GridOptionsManager.getInstance(context),
                             backgroundDispatcher = Dispatchers.IO,
                         ),
