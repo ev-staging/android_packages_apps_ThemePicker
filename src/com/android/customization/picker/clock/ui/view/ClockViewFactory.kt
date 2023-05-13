@@ -21,6 +21,7 @@ import android.view.View
 import androidx.annotation.ColorInt
 import androidx.lifecycle.LifecycleOwner
 import com.android.systemui.plugins.ClockController
+import com.android.systemui.plugins.WeatherData
 import com.android.systemui.shared.clocks.ClockRegistry
 import com.android.wallpaper.R
 import com.android.wallpaper.util.ScreenSizeCalculator
@@ -33,7 +34,7 @@ class ClockViewFactory(
 ) {
     private val timeTickListeners: ConcurrentHashMap<Int, TimeTicker> = ConcurrentHashMap()
     private val clockControllers: HashMap<String, ClockController> = HashMap()
-    private var ticker: TimeTicker? = null
+
     fun getRatio(): Float {
         val screenSizeCalculator = ScreenSizeCalculator.getInstance()
         val screenSize = screenSizeCalculator.getScreenSize(activity.windowManager.defaultDisplay)
@@ -59,15 +60,32 @@ class ClockViewFactory(
             .onSeedColorChanged(seedColor)
     }
 
+    fun updateTimeFormat(clockId: String) {
+        getController(clockId)
+            .events
+            .onTimeFormatChanged(android.text.format.DateFormat.is24HourFormat(activity))
+    }
+
     fun registerTimeTicker(owner: LifecycleOwner) {
+        registerTimeTicker(owner, null)
+    }
+
+    fun registerTimeTicker(owner: LifecycleOwner, shouldTimeTick: (() -> Boolean)?) {
         val hashCode = owner.hashCode()
         if (timeTickListeners.keys.contains(hashCode)) {
             return
         }
+
         timeTickListeners[hashCode] =
             TimeTicker.registerNewReceiver(activity.applicationContext) {
-                clockControllers.values.forEach { it.largeClock.events.onTimeTick() }
+                if (shouldTimeTick == null || shouldTimeTick()) {
+                    onTimeTick()
+                }
             }
+    }
+
+    private fun onTimeTick() {
+        clockControllers.values.forEach { it.largeClock.events.onTimeTick() }
     }
 
     fun unregisterTimeTicker(owner: LifecycleOwner) {
@@ -94,7 +112,23 @@ class ClockViewFactory(
             activity.resources.getDimensionPixelSize(R.dimen.large_clock_text_size).toFloat() *
                 getRatio()
         )
+        // Use placeholder for weather clock preview in picker
+        controller.events.onWeatherDataChanged(
+            WeatherData(
+                description = DESCRIPTION_PLACEHODLER,
+                state = WEATHERICON_PLACEHOLDER,
+                temperature = TEMPERATURE_PLACEHOLDER,
+                useCelsius = USE_CELSIUS_PLACEHODLER,
+            )
+        )
         clockControllers[clockId] = controller
         return controller
+    }
+
+    companion object {
+        val DESCRIPTION_PLACEHODLER = ""
+        val TEMPERATURE_PLACEHOLDER = 58
+        val WEATHERICON_PLACEHOLDER = WeatherData.WeatherStateIcon.MOSTLY_SUNNY
+        val USE_CELSIUS_PLACEHODLER = false
     }
 }
