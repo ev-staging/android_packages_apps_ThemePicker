@@ -15,8 +15,8 @@
  */
 package com.android.customization.module
 
-import android.app.Activity
 import android.app.UiModeManager
+import android.app.WallpaperManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -25,8 +25,9 @@ import android.text.TextUtils
 import androidx.activity.ComponentActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.get
 import com.android.customization.model.color.ColorCustomizationManager
 import com.android.customization.model.color.ColorOptionsProvider
 import com.android.customization.model.grid.GridOptionsManager
@@ -45,6 +46,7 @@ import com.android.customization.model.themedicon.domain.interactor.ThemedIconSn
 import com.android.customization.picker.clock.data.repository.ClockPickerRepositoryImpl
 import com.android.customization.picker.clock.data.repository.ClockRegistryProvider
 import com.android.customization.picker.clock.domain.interactor.ClockPickerInteractor
+import com.android.customization.picker.clock.domain.interactor.ClockPickerSnapshotRestorer
 import com.android.customization.picker.clock.ui.view.ClockViewFactory
 import com.android.customization.picker.clock.ui.viewmodel.ClockCarouselViewModel
 import com.android.customization.picker.clock.ui.viewmodel.ClockSectionViewModel
@@ -80,6 +82,7 @@ import com.android.wallpaper.picker.customization.data.content.WallpaperClientIm
 import com.android.wallpaper.picker.customization.data.repository.WallpaperRepository
 import com.android.wallpaper.picker.customization.domain.interactor.WallpaperInteractor
 import com.android.wallpaper.picker.undo.domain.interactor.SnapshotRestorer
+import com.android.wallpaper.util.ScreenSizeCalculator
 import kotlinx.coroutines.Dispatchers
 
 open class ThemePickerInjector : WallpaperPicker2Injector(), CustomizationInjector {
@@ -97,11 +100,11 @@ open class ThemePickerInjector : WallpaperPicker2Injector(), CustomizationInject
     private var keyguardQuickAffordanceSnapshotRestorer: KeyguardQuickAffordanceSnapshotRestorer? =
         null
     private var notificationsSnapshotRestorer: NotificationsSnapshotRestorer? = null
-    private var clockRegistry: ClockRegistry? = null
     private var clockPickerInteractor: ClockPickerInteractor? = null
     private var clockSectionViewModel: ClockSectionViewModel? = null
     private var clockCarouselViewModelFactory: ClockCarouselViewModel.Factory? = null
-    private var clockViewFactory: ClockViewFactory? = null
+    private var clockViewFactories: MutableMap<Int, ClockViewFactory> = HashMap()
+    private var clockPickerSnapshotRestorer: ClockPickerSnapshotRestorer? = null
     private var notificationsInteractor: NotificationsInteractor? = null
     private var notificationSectionViewModelFactory: NotificationSectionViewModel.Factory? = null
     private var colorPickerInteractor: ColorPickerInteractor? = null
@@ -115,6 +118,7 @@ open class ThemePickerInjector : WallpaperPicker2Injector(), CustomizationInject
     private var gridInteractor: GridInteractor? = null
     private var gridSnapshotRestorer: GridSnapshotRestorer? = null
     private var gridScreenViewModelFactory: GridScreenViewModel.Factory? = null
+    private var clockRegistryProvider: ClockRegistryProvider? = null
 
     override fun getCustomizationSections(activity: ComponentActivity): CustomizationSections {
         return customizationSections
@@ -130,7 +134,7 @@ open class ThemePickerInjector : WallpaperPicker2Injector(), CustomizationInject
                     ),
                     getFlags(),
                     getClockCarouselViewModelFactory(
-                        getClockPickerInteractor(activity.applicationContext),
+                        getClockPickerInteractor(activity.applicationContext, activity),
                     ),
                     getClockViewFactory(activity),
                     getDarkModeSnapshotRestorer(activity),
@@ -190,18 +194,26 @@ open class ThemePickerInjector : WallpaperPicker2Injector(), CustomizationInject
         return fragmentFactory ?: ThemePickerFragmentFactory().also { fragmentFactory }
     }
 
-    override fun getSnapshotRestorers(context: Context): Map<Int, SnapshotRestorer> {
-        return super<WallpaperPicker2Injector>.getSnapshotRestorers(context).toMutableMap().apply {
-            this[KEY_QUICK_AFFORDANCE_SNAPSHOT_RESTORER] =
-                getKeyguardQuickAffordanceSnapshotRestorer(context)
-            this[KEY_WALLPAPER_SNAPSHOT_RESTORER] = getWallpaperSnapshotRestorer(context)
-            this[KEY_NOTIFICATIONS_SNAPSHOT_RESTORER] = getNotificationsSnapshotRestorer(context)
-            this[KEY_DARK_MODE_SNAPSHOT_RESTORER] = getDarkModeSnapshotRestorer(context)
-            this[KEY_THEMED_ICON_SNAPSHOT_RESTORER] = getThemedIconSnapshotRestorer(context)
-            this[KEY_APP_GRID_SNAPSHOT_RESTORER] = getGridSnapshotRestorer(context)
-            this[KEY_COLOR_PICKER_SNAPSHOT_RESTORER] =
-                getColorPickerSnapshotRestorer(context, getWallpaperColorsViewModel())
-        }
+    override fun getSnapshotRestorers(
+        context: Context,
+        lifecycleOwner: LifecycleOwner
+    ): Map<Int, SnapshotRestorer> {
+        return super<WallpaperPicker2Injector>.getSnapshotRestorers(context, lifecycleOwner)
+            .toMutableMap()
+            .apply {
+                this[KEY_QUICK_AFFORDANCE_SNAPSHOT_RESTORER] =
+                    getKeyguardQuickAffordanceSnapshotRestorer(context)
+                this[KEY_WALLPAPER_SNAPSHOT_RESTORER] = getWallpaperSnapshotRestorer(context)
+                this[KEY_NOTIFICATIONS_SNAPSHOT_RESTORER] =
+                    getNotificationsSnapshotRestorer(context)
+                this[KEY_DARK_MODE_SNAPSHOT_RESTORER] = getDarkModeSnapshotRestorer(context)
+                this[KEY_THEMED_ICON_SNAPSHOT_RESTORER] = getThemedIconSnapshotRestorer(context)
+                this[KEY_APP_GRID_SNAPSHOT_RESTORER] = getGridSnapshotRestorer(context)
+                this[KEY_COLOR_PICKER_SNAPSHOT_RESTORER] =
+                    getColorPickerSnapshotRestorer(context, getWallpaperColorsViewModel())
+                this[KEY_CLOCKS_SNAPSHOT_RESTORER] =
+                    getClockPickerSnapshotRestorer(context, lifecycleOwner)
+            }
     }
 
     override fun getCustomizationPreferences(context: Context): CustomizationPreferences {
@@ -255,20 +267,8 @@ open class ThemePickerInjector : WallpaperPicker2Injector(), CustomizationInject
                     getKeyguardQuickAffordancePickerInteractor(context),
                     getWallpaperInteractor(context),
                     getCurrentWallpaperInfoFactory(context),
-                ) { intent ->
-                    context.startActivity(intent)
-                }
-                .also { keyguardQuickAffordancePickerViewModelFactory = it }
-    }
-
-    fun getNotificationSectionViewModelFactory(
-        context: Context,
-    ): NotificationSectionViewModel.Factory {
-        return notificationSectionViewModelFactory
-            ?: NotificationSectionViewModel.Factory(
-                    interactor = getNotificationsInteractor(context),
                 )
-                .also { notificationSectionViewModelFactory = it }
+                .also { keyguardQuickAffordancePickerViewModelFactory = it }
     }
 
     private fun getKeyguardQuickAffordancePickerInteractorImpl(
@@ -303,62 +303,14 @@ open class ThemePickerInjector : WallpaperPicker2Injector(), CustomizationInject
                 .also { keyguardQuickAffordanceSnapshotRestorer = it }
     }
 
-    private fun getNotificationsSnapshotRestorer(context: Context): NotificationsSnapshotRestorer {
-        return notificationsSnapshotRestorer
-            ?: NotificationsSnapshotRestorer(
-                    interactor =
-                        getNotificationsInteractor(
-                            context = context,
-                        ),
-                )
-                .also { notificationsSnapshotRestorer = it }
-    }
-
-    override fun getClockRegistry(context: Context): ClockRegistry {
-        return clockRegistry
-            ?: ClockRegistryProvider(
-                    context = context,
-                    coroutineScope = getApplicationCoroutineScope(),
-                    mainDispatcher = Dispatchers.Main,
-                    backgroundDispatcher = Dispatchers.IO,
-                )
-                .get()
-                .also { clockRegistry = it }
-    }
-
-    override fun getClockPickerInteractor(
+    fun getNotificationSectionViewModelFactory(
         context: Context,
-    ): ClockPickerInteractor {
-        return clockPickerInteractor
-            ?: ClockPickerInteractor(
-                    ClockPickerRepositoryImpl(
-                        secureSettingsRepository = getSecureSettingsRepository(context),
-                        registry = getClockRegistry(context),
-                        scope = getApplicationCoroutineScope(),
-                    ),
+    ): NotificationSectionViewModel.Factory {
+        return notificationSectionViewModelFactory
+            ?: NotificationSectionViewModel.Factory(
+                    interactor = getNotificationsInteractor(context),
                 )
-                .also { clockPickerInteractor = it }
-    }
-
-    override fun getClockSectionViewModel(context: Context): ClockSectionViewModel {
-        return clockSectionViewModel
-            ?: ClockSectionViewModel(context, getClockPickerInteractor(context)).also {
-                clockSectionViewModel = it
-            }
-    }
-
-    override fun getClockCarouselViewModelFactory(
-        interactor: ClockPickerInteractor,
-    ): ClockCarouselViewModel.Factory {
-        return clockCarouselViewModelFactory
-            ?: ClockCarouselViewModel.Factory(interactor, Dispatchers.IO).also {
-                clockCarouselViewModelFactory = it
-            }
-    }
-
-    override fun getClockViewFactory(activity: Activity): ClockViewFactory {
-        return clockViewFactory
-            ?: ClockViewFactory(activity, getClockRegistry(activity)).also { clockViewFactory = it }
+                .also { notificationSectionViewModelFactory = it }
     }
 
     private fun getNotificationsInteractor(
@@ -375,6 +327,102 @@ open class ThemePickerInjector : WallpaperPicker2Injector(), CustomizationInject
                     snapshotRestorer = { getNotificationsSnapshotRestorer(context) },
                 )
                 .also { notificationsInteractor = it }
+    }
+
+    private fun getNotificationsSnapshotRestorer(context: Context): NotificationsSnapshotRestorer {
+        return notificationsSnapshotRestorer
+            ?: NotificationsSnapshotRestorer(
+                    interactor =
+                        getNotificationsInteractor(
+                            context = context,
+                        ),
+                )
+                .also { notificationsSnapshotRestorer = it }
+    }
+
+    override fun getClockRegistry(context: Context, lifecycleOwner: LifecycleOwner): ClockRegistry {
+        return (clockRegistryProvider
+                ?: ClockRegistryProvider(
+                        context = context,
+                        coroutineScope = getApplicationCoroutineScope(),
+                        mainDispatcher = Dispatchers.Main,
+                        backgroundDispatcher = Dispatchers.IO,
+                    )
+                    .also { clockRegistryProvider = it })
+            .getForOwner(lifecycleOwner)
+    }
+
+    override fun getClockPickerInteractor(
+        context: Context,
+        lifecycleOwner: LifecycleOwner,
+    ): ClockPickerInteractor {
+        return clockPickerInteractor
+            ?: ClockPickerInteractor(
+                    repository =
+                        ClockPickerRepositoryImpl(
+                            secureSettingsRepository = getSecureSettingsRepository(context),
+                            registry = getClockRegistry(context, lifecycleOwner),
+                            scope = getApplicationCoroutineScope(),
+                            mainDispatcher = Dispatchers.Main,
+                        ),
+                    snapshotRestorer = { getClockPickerSnapshotRestorer(context, lifecycleOwner) },
+                )
+                .also { clockPickerInteractor = it }
+    }
+
+    override fun getClockSectionViewModel(
+        context: Context,
+        lifecycleOwner: LifecycleOwner
+    ): ClockSectionViewModel {
+        return clockSectionViewModel
+            ?: ClockSectionViewModel(context, getClockPickerInteractor(context, lifecycleOwner))
+                .also { clockSectionViewModel = it }
+    }
+
+    override fun getClockCarouselViewModelFactory(
+        interactor: ClockPickerInteractor,
+    ): ClockCarouselViewModel.Factory {
+        return clockCarouselViewModelFactory
+            ?: ClockCarouselViewModel.Factory(interactor, Dispatchers.IO).also {
+                clockCarouselViewModelFactory = it
+            }
+    }
+
+    override fun getClockViewFactory(activity: ComponentActivity): ClockViewFactory {
+        val activityHashCode = activity.hashCode()
+        return clockViewFactories[activityHashCode]
+            ?: ClockViewFactory(
+                    activity.applicationContext,
+                    ScreenSizeCalculator.getInstance()
+                        .getScreenSize(activity.windowManager.defaultDisplay),
+                    WallpaperManager.getInstance(activity.applicationContext),
+                    getClockRegistry(
+                        context = activity.applicationContext,
+                        lifecycleOwner = activity,
+                    ),
+                )
+                .also {
+                    clockViewFactories[activityHashCode] = it
+                    activity.lifecycle.addObserver(
+                        object : DefaultLifecycleObserver {
+                            override fun onDestroy(owner: LifecycleOwner) {
+                                super.onDestroy(owner)
+                                clockViewFactories[activityHashCode]?.onDestroy()
+                                clockViewFactories.remove(activityHashCode)
+                            }
+                        }
+                    )
+                }
+    }
+
+    private fun getClockPickerSnapshotRestorer(
+        context: Context,
+        lifecycleOwner: LifecycleOwner
+    ): ClockPickerSnapshotRestorer {
+        return clockPickerSnapshotRestorer
+            ?: ClockPickerSnapshotRestorer(getClockPickerInteractor(context, lifecycleOwner)).also {
+                clockPickerSnapshotRestorer = it
+            }
     }
 
     override fun getColorPickerInteractor(
@@ -464,11 +512,12 @@ open class ThemePickerInjector : WallpaperPicker2Injector(), CustomizationInject
         context: Context,
         wallpaperColorsViewModel: WallpaperColorsViewModel,
         clockViewFactory: ClockViewFactory,
+        lifecycleOwner: LifecycleOwner,
     ): ClockSettingsViewModel.Factory {
         return clockSettingsViewModelFactory
             ?: ClockSettingsViewModel.Factory(
                     context,
-                    getClockPickerInteractor(context),
+                    getClockPickerInteractor(context, lifecycleOwner),
                     getColorPickerInteractor(
                         context,
                         wallpaperColorsViewModel,
@@ -534,6 +583,7 @@ open class ThemePickerInjector : WallpaperPicker2Injector(), CustomizationInject
         private val KEY_APP_GRID_SNAPSHOT_RESTORER = KEY_THEMED_ICON_SNAPSHOT_RESTORER + 1
         @JvmStatic
         private val KEY_COLOR_PICKER_SNAPSHOT_RESTORER = KEY_APP_GRID_SNAPSHOT_RESTORER + 1
+        @JvmStatic private val KEY_CLOCKS_SNAPSHOT_RESTORER = KEY_COLOR_PICKER_SNAPSHOT_RESTORER + 1
 
         /**
          * When this injector is overridden, this is the minimal value that should be used by
@@ -541,6 +591,6 @@ open class ThemePickerInjector : WallpaperPicker2Injector(), CustomizationInject
          *
          * It should always be greater than the biggest restorer key.
          */
-        @JvmStatic protected val MIN_SNAPSHOT_RESTORER_KEY = KEY_COLOR_PICKER_SNAPSHOT_RESTORER + 1
+        @JvmStatic protected val MIN_SNAPSHOT_RESTORER_KEY = KEY_CLOCKS_SNAPSHOT_RESTORER + 1
     }
 }

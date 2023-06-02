@@ -176,4 +176,8 @@
     copied from sysui resources
     -->
     <dimen name="keyguard_large_clock_top_margin">-60dp</dimen>
+    <!-- Dimension for the clock view, copied from sysui resources. -->
+    <dimen name="small_clock_height">114dp</dimen>
+    <dimen name="small_clock_padding_top">28dp</dimen>
+    <dimen name="clock_padding_start">28dp</dimen>
 </resources>
