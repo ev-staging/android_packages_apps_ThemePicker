@@ -17,18 +17,28 @@
 
 package com.android.customization.picker.preview.ui.section
 
-import android.app.Activity
 import android.content.Context
+import android.graphics.Rect
+import android.os.Bundle
+import android.view.TouchDelegate
 import android.view.View
+import android.view.View.OnAttachStateChangeListener
 import android.view.ViewGroup
 import android.view.ViewStub
+import androidx.activity.ComponentActivity
+import androidx.constraintlayout.helper.widget.Carousel
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.constraintlayout.widget.Guideline
 import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.get
 import androidx.lifecycle.lifecycleScope
 import com.android.customization.picker.clock.ui.binder.ClockCarouselViewBinder
 import com.android.customization.picker.clock.ui.fragment.ClockSettingsFragment
 import com.android.customization.picker.clock.ui.view.ClockCarouselView
 import com.android.customization.picker.clock.ui.view.ClockViewFactory
 import com.android.customization.picker.clock.ui.viewmodel.ClockCarouselViewModel
+import com.android.systemui.shared.quickaffordance.shared.model.KeyguardPreviewConstants
 import com.android.wallpaper.R
 import com.android.wallpaper.model.CustomizationSectionController.CustomizationSectionNavigationController
 import com.android.wallpaper.model.WallpaperColorsViewModel
@@ -39,21 +49,23 @@ import com.android.wallpaper.picker.customization.domain.interactor.WallpaperInt
 import com.android.wallpaper.picker.customization.ui.section.ScreenPreviewSectionController
 import com.android.wallpaper.picker.customization.ui.section.ScreenPreviewView
 import com.android.wallpaper.util.DisplayUtils
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 /** Controls the screen preview section. */
 class PreviewWithClockCarouselSectionController(
-    activity: Activity,
+    activity: ComponentActivity,
     private val lifecycleOwner: LifecycleOwner,
     private val screen: CustomizationSections.Screen,
     wallpaperInfoFactory: CurrentWallpaperInfoFactory,
     colorViewModel: WallpaperColorsViewModel,
     displayUtils: DisplayUtils,
-    private val clockCarouselViewModel: ClockCarouselViewModel,
+    clockCarouselViewModelFactory: ClockCarouselViewModel.Factory,
     private val clockViewFactory: ClockViewFactory,
     wallpaperPreviewNavigator: WallpaperPreviewNavigator,
     private val navigationController: CustomizationSectionNavigationController,
     wallpaperInteractor: WallpaperInteractor,
+    private val isTwoPaneAndSmallWidth: Boolean,
 ) :
     ScreenPreviewSectionController(
         activity,
@@ -64,7 +76,15 @@ class PreviewWithClockCarouselSectionController(
         displayUtils,
         wallpaperPreviewNavigator,
         wallpaperInteractor,
+        isTwoPaneAndSmallWidth,
     ) {
+
+    private val viewModel =
+        ViewModelProvider(
+                activity,
+                clockCarouselViewModelFactory,
+            )
+            .get() as ClockCarouselViewModel
 
     private var clockColorAndSizeButton: View? = null
 
@@ -80,27 +100,95 @@ class PreviewWithClockCarouselSectionController(
             clockColorAndSizeButton?.setOnClickListener {
                 navigationController.navigateTo(ClockSettingsFragment())
             }
+            // clockColorAndSizeButton's touch target has to be increased programmatically
+            // rather than with padding because this button only appears in the lock screen tab.
+            view.post {
+                val rect = Rect()
+                clockColorAndSizeButton?.getHitRect(rect)
+                val padding =
+                    context
+                        .getResources()
+                        .getDimensionPixelSize(R.dimen.screen_preview_section_vertical_space)
+                rect.top -= padding
+                rect.bottom += padding
+                val touchDelegate = TouchDelegate(rect, clockColorAndSizeButton)
+                view.setTouchDelegate(touchDelegate)
+            }
 
             val carouselViewStub: ViewStub = view.requireViewById(R.id.clock_carousel_view_stub)
             carouselViewStub.layoutResource = R.layout.clock_carousel_view
             val carouselView = carouselViewStub.inflate() as ClockCarouselView
+
+            if (isTwoPaneAndSmallWidth) {
+                val guidelineMargin =
+                    context.resources.getDimensionPixelSize(
+                        R.dimen.clock_carousel_guideline_margin_for_2_pane_small_width
+                    )
+
+                val guidelineStart = carouselView.requireViewById<Guideline>(R.id.guideline_start)
+                var layoutParams = guidelineStart.layoutParams as ConstraintLayout.LayoutParams
+                layoutParams.guideBegin = guidelineMargin
+                guidelineStart.layoutParams = layoutParams
+
+                val guidelineEnd = carouselView.requireViewById<Guideline>(R.id.guideline_end)
+                layoutParams = guidelineEnd.layoutParams as ConstraintLayout.LayoutParams
+                layoutParams.guideEnd = guidelineMargin
+                guidelineEnd.layoutParams = layoutParams
+            }
 
             // TODO (b/270716937) We should handle the single clock case in the clock carousel
             // itself
             val singleClockViewStub: ViewStub = view.requireViewById(R.id.single_clock_view_stub)
             singleClockViewStub.layoutResource = R.layout.single_clock_view
             val singleClockView = singleClockViewStub.inflate() as ViewGroup
-            lifecycleOwner.lifecycleScope.launch {
-                ClockCarouselViewBinder.bind(
-                    carouselView = carouselView,
-                    singleClockView = singleClockView,
-                    viewModel = clockCarouselViewModel,
-                    clockViewFactory = clockViewFactory,
-                    lifecycleOwner = lifecycleOwner,
-                )
-            }
+
+            /**
+             * Only bind after [Carousel.onAttachedToWindow]. This is to avoid the race condition
+             * that the flow emits before attached to window where [Carousel.mMotionLayout] is still
+             * null.
+             */
+            var onAttachStateChangeListener: OnAttachStateChangeListener? = null
+            var bindJob: Job? = null
+            onAttachStateChangeListener =
+                object : OnAttachStateChangeListener {
+                    override fun onViewAttachedToWindow(view: View?) {
+                        bindJob =
+                            lifecycleOwner.lifecycleScope.launch {
+                                ClockCarouselViewBinder.bind(
+                                    carouselView = carouselView,
+                                    singleClockView = singleClockView,
+                                    viewModel = viewModel,
+                                    clockViewFactory = clockViewFactory,
+                                    lifecycleOwner = lifecycleOwner,
+                                    hideSmartspace = ::hideSmartspace,
+                                )
+                                if (onAttachStateChangeListener != null) {
+                                    carouselView.carousel.removeOnAttachStateChangeListener(
+                                        onAttachStateChangeListener,
+                                    )
+                                }
+                            }
+                    }
+
+                    override fun onViewDetachedFromWindow(view: View?) {
+                        bindJob?.cancel()
+                    }
+                }
+            carouselView.carousel.addOnAttachStateChangeListener(onAttachStateChangeListener)
         }
 
         return view
+    }
+
+    private fun hideSmartspace(hide: Boolean) {
+        previewViewBinding.sendMessage(
+            KeyguardPreviewConstants.MESSAGE_ID_HIDE_SMART_SPACE,
+            Bundle().apply {
+                putBoolean(
+                    KeyguardPreviewConstants.KEY_HIDE_SMART_SPACE,
+                    hide,
+                )
+            }
+        )
     }
 }

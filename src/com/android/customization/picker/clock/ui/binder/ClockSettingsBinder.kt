@@ -16,9 +16,10 @@
 package com.android.customization.picker.clock.ui.binder
 
 import android.content.res.Configuration
+import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.FrameLayout
+import android.widget.LinearLayout
 import android.widget.SeekBar
 import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
@@ -31,14 +32,14 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.android.customization.picker.clock.shared.ClockSize
 import com.android.customization.picker.clock.ui.adapter.ClockSettingsTabAdapter
+import com.android.customization.picker.clock.ui.view.ClockHostView
 import com.android.customization.picker.clock.ui.view.ClockSizeRadioButtonGroup
 import com.android.customization.picker.clock.ui.view.ClockViewFactory
 import com.android.customization.picker.clock.ui.viewmodel.ClockSettingsViewModel
 import com.android.customization.picker.color.ui.binder.ColorOptionIconBinder
-import com.android.customization.picker.color.ui.viewmodel.ColorOptionIconViewModel
 import com.android.customization.picker.common.ui.view.ItemSpacing
 import com.android.wallpaper.R
-import com.android.wallpaper.picker.option.ui.adapter.OptionItemAdapter
+import com.android.wallpaper.picker.option.ui.binder.OptionItemBinder
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 
@@ -46,6 +47,7 @@ import kotlinx.coroutines.launch
 object ClockSettingsBinder {
     private const val SLIDER_ENABLED_ALPHA = 1f
     private const val SLIDER_DISABLED_ALPHA = .3f
+    private const val COLOR_PICKER_ITEM_PREFIX_ID = 1234
 
     fun bind(
         view: View,
@@ -53,32 +55,13 @@ object ClockSettingsBinder {
         clockViewFactory: ClockViewFactory,
         lifecycleOwner: LifecycleOwner,
     ) {
-        val clockHostView: FrameLayout = view.requireViewById(R.id.clock_host_view)
-
+        val clockHostView: ClockHostView = view.requireViewById(R.id.clock_host_view)
         val tabView: RecyclerView = view.requireViewById(R.id.tabs)
         val tabAdapter = ClockSettingsTabAdapter()
         tabView.adapter = tabAdapter
         tabView.layoutManager = LinearLayoutManager(view.context, RecyclerView.HORIZONTAL, false)
         tabView.addItemDecoration(ItemSpacing(ItemSpacing.TAB_ITEM_SPACING_DP))
-
-        val colorOptionContainerView: RecyclerView = view.requireViewById(R.id.color_options)
-        val colorOptionAdapter =
-            OptionItemAdapter(
-                layoutResourceId = R.layout.clock_color_option,
-                lifecycleOwner = lifecycleOwner,
-                bindIcon = { foregroundView: View, colorIcon: ColorOptionIconViewModel ->
-                    val viewGroup = foregroundView as? ViewGroup
-                    val night =
-                        (view.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK ==
-                            Configuration.UI_MODE_NIGHT_YES)
-                    viewGroup?.let { ColorOptionIconBinder.bind(viewGroup, colorIcon, night) }
-                }
-            )
-        colorOptionContainerView.adapter = colorOptionAdapter
-        colorOptionContainerView.layoutManager =
-            LinearLayoutManager(view.context, RecyclerView.HORIZONTAL, false)
-        colorOptionContainerView.addItemDecoration(ItemSpacing(ItemSpacing.ITEM_SPACING_DP))
-
+        val colorOptionContainerListView: LinearLayout = view.requireViewById(R.id.color_options)
         val slider: SeekBar = view.requireViewById(R.id.slider)
         slider.setOnSeekBarChangeListener(
             object : SeekBar.OnSeekBarChangeListener {
@@ -145,18 +128,49 @@ object ClockSettingsBinder {
 
                 launch {
                     viewModel.colorOptions.collect { colorOptions ->
-                        colorOptionAdapter.setItems(colorOptions)
+                        colorOptions.forEachIndexed { index, colorOption ->
+                            colorOption.payload?.let { payload ->
+                                val item =
+                                    LayoutInflater.from(view.context)
+                                        .inflate(
+                                            R.layout.color_option_2,
+                                            colorOptionContainerListView,
+                                            false,
+                                        ) as LinearLayout
+                                val darkMode =
+                                    (view.resources.configuration.uiMode and
+                                        Configuration.UI_MODE_NIGHT_MASK ==
+                                        Configuration.UI_MODE_NIGHT_YES)
+                                ColorOptionIconBinder.bind(
+                                    item.requireViewById(R.id.foreground),
+                                    payload,
+                                    darkMode
+                                )
+                                OptionItemBinder.bind(
+                                    view = item,
+                                    viewModel = colorOptions[index],
+                                    lifecycleOwner = lifecycleOwner,
+                                    foregroundTintSpec = null,
+                                )
+
+                                val id = COLOR_PICKER_ITEM_PREFIX_ID + index
+                                item.id = id
+                                colorOptionContainerListView.addView(item)
+                            }
+                        }
                     }
                 }
 
                 launch {
                     viewModel.selectedColorOptionPosition.collect { selectedPosition ->
                         if (selectedPosition != -1) {
-                            // We use "post" because we need to give the adapter item a pass to
-                            // update the view.
-                            colorOptionContainerView.post {
-                                colorOptionContainerView.smoothScrollToPosition(selectedPosition)
-                            }
+                            val colorOptionContainerListView: LinearLayout =
+                                view.requireViewById(R.id.color_options)
+                            val selectedView =
+                                colorOptionContainerListView.requireViewById<View>(
+                                    COLOR_PICKER_ITEM_PREFIX_ID + selectedPosition
+                                )
+                            selectedView.parent.requestChildFocus(selectedView, selectedView)
                         }
                     }
                 }
