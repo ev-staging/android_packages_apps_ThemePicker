@@ -27,7 +27,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.android.customization.picker.quickaffordance.domain.interactor.KeyguardQuickAffordancePickerInteractor
-import com.android.systemui.shared.customization.data.content.CustomizationProviderContract
 import com.android.systemui.shared.keyguard.shared.model.KeyguardQuickAffordanceSlots
 import com.android.systemui.shared.quickaffordance.shared.model.KeyguardPreviewConstants
 import com.android.wallpaper.R
@@ -262,10 +261,9 @@ private constructor(
                                     showEnablementDialog(
                                         icon = affordanceIcon,
                                         name = affordance.name,
-                                        instructions = affordance.enablementInstructions,
+                                        explanation = affordance.enablementExplanation,
                                         actionText = affordance.enablementActionText,
-                                        actionComponentName =
-                                            affordance.enablementActionComponentName,
+                                        actionIntent = affordance.enablementActionIntent,
                                     )
                                 }
                             },
@@ -348,9 +346,9 @@ private constructor(
     private fun showEnablementDialog(
         icon: Drawable,
         name: String,
-        instructions: List<String>,
+        explanation: String,
         actionText: String?,
-        actionComponentName: String?,
+        actionIntent: Intent?,
     ) {
         _dialog.value =
             DialogViewModel(
@@ -359,35 +357,39 @@ private constructor(
                         drawable = icon,
                         contentDescription = null,
                     ),
-                title = Text.Loaded(name),
-                message =
-                    Text.Loaded(
-                        buildString {
-                            instructions.forEachIndexed { index, instruction ->
-                                if (index > 0) {
-                                    append('\n')
-                                }
-
-                                append(instruction)
-                            }
-                        }
-                    ),
+                headline = Text.Resource(R.string.keyguard_affordance_enablement_dialog_headline),
+                message = Text.Loaded(explanation),
                 buttons =
-                    listOf(
-                        ButtonViewModel(
-                            text = actionText?.let { Text.Loaded(actionText) }
-                                    ?: Text.Resource(
-                                        R.string
-                                            .keyguard_affordance_enablement_dialog_dismiss_button,
+                    buildList {
+                        add(
+                            ButtonViewModel(
+                                text =
+                                    Text.Resource(
+                                        if (actionText != null) {
+                                            // This is not the only button on the dialog.
+                                            R.string.cancel
+                                        } else {
+                                            // This is the only button on the dialog.
+                                            R.string
+                                                .keyguard_affordance_enablement_dialog_dismiss_button
+                                        }
                                     ),
-                            style = ButtonStyle.Primary,
-                            onClicked = {
-                                actionComponentName.toIntent()?.let { intent ->
-                                    requestActivityStart(intent)
-                                }
-                            }
-                        ),
-                    ),
+                                style = ButtonStyle.Secondary,
+                            ),
+                        )
+
+                        if (actionText != null) {
+                            add(
+                                ButtonViewModel(
+                                    text = Text.Loaded(actionText),
+                                    style = ButtonStyle.Primary,
+                                    onClicked = {
+                                        actionIntent?.let { intent -> requestActivityStart(intent) }
+                                    }
+                                ),
+                            )
+                        }
+                    },
             )
     }
 
@@ -423,29 +425,6 @@ private constructor(
 
     private suspend fun getAffordanceIcon(@DrawableRes iconResourceId: Int): Drawable {
         return quickAffordanceInteractor.getAffordanceIcon(iconResourceId)
-    }
-
-    private fun String?.toIntent(): Intent? {
-        if (isNullOrEmpty()) {
-            return null
-        }
-
-        val splitUp =
-            split(
-                CustomizationProviderContract.LockScreenQuickAffordances.AffordanceTable
-                    .COMPONENT_NAME_SEPARATOR
-            )
-        check(splitUp.size == 1 || splitUp.size == 2) {
-            "Illegal component name \"$this\". Must be either just an action or a package and an" +
-                " action separated by a" +
-                " \"${CustomizationProviderContract.LockScreenQuickAffordances.AffordanceTable.COMPONENT_NAME_SEPARATOR}\"!"
-        }
-
-        return Intent(splitUp.last()).apply {
-            if (splitUp.size > 1) {
-                setPackage(splitUp[0])
-            }
-        }
     }
 
     private fun toDescriptionText(

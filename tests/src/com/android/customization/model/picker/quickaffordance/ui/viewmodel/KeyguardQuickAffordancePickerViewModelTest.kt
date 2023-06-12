@@ -248,11 +248,11 @@ class KeyguardQuickAffordancePickerViewModelTest {
             val dialog = collectLastValue(underTest.dialog)
             val activityStartRequest = collectLastValue(underTest.activityStartRequests)
 
-            val enablementInstructions = listOf("instruction1", "instruction2")
+            val enablementExplanation = "enablementExplanation"
             val enablementActionText = "enablementActionText"
             val packageName = "packageName"
             val action = "action"
-            val enablementActionComponentName = "$packageName/$action"
+            val enablementActionIntent = Intent(action).apply { `package` = packageName }
             // Lets add a disabled affordance to the picker:
             val affordanceIndex =
                 client.addAffordance(
@@ -261,9 +261,9 @@ class KeyguardQuickAffordancePickerViewModelTest {
                         name = "disabled",
                         iconResourceId = 1,
                         isEnabled = false,
-                        enablementInstructions = enablementInstructions,
+                        enablementExplanation = enablementExplanation,
                         enablementActionText = enablementActionText,
-                        enablementActionComponentName = enablementActionComponentName,
+                        enablementActionIntent = enablementActionIntent,
                     )
                 )
 
@@ -273,16 +273,16 @@ class KeyguardQuickAffordancePickerViewModelTest {
             // We expect there to be a dialog that should be shown:
             assertThat(dialog()?.icon)
                 .isEqualTo(Icon.Loaded(FakeCustomizationProviderClient.ICON_1, null))
-            assertThat(dialog()?.title).isEqualTo(Text.Loaded("disabled"))
-            assertThat(dialog()?.message)
-                .isEqualTo(Text.Loaded(enablementInstructions.joinToString("\n")))
-            assertThat(dialog()?.buttons?.size).isEqualTo(1)
-            assertThat(dialog()?.buttons?.first()?.text)
-                .isEqualTo(Text.Loaded(enablementActionText))
+            assertThat(dialog()?.headline)
+                .isEqualTo(Text.Resource(R.string.keyguard_affordance_enablement_dialog_headline))
+            assertThat(dialog()?.message).isEqualTo(Text.Loaded(enablementExplanation))
+            assertThat(dialog()?.buttons?.size).isEqualTo(2)
+            assertThat(dialog()?.buttons?.first()?.text).isEqualTo(Text.Resource(R.string.cancel))
+            assertThat(dialog()?.buttons?.get(1)?.text).isEqualTo(Text.Loaded(enablementActionText))
 
             // When the button is clicked, we expect an intent of the given enablement action
             // component name to be emitted.
-            dialog()?.buttons?.first()?.onClicked?.invoke()
+            dialog()?.buttons?.get(1)?.onClicked?.invoke()
             assertThat(activityStartRequest()?.`package`).isEqualTo(packageName)
             assertThat(activityStartRequest()?.action).isEqualTo(action)
 

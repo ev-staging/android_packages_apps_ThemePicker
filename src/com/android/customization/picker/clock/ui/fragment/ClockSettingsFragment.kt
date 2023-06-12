@@ -112,7 +112,7 @@ class ClockSettingsFragment : AppbarFragment() {
                 ),
             lifecycleOwner = this,
             offsetToStart = displayUtils.isSingleDisplayOrUnfoldedHorizontalHinge(activity),
-            onPreviewDirty = { activity.recreate() },
+            onWallpaperPreviewDirty = { activity.recreate() },
         )
 
         ClockSettingsBinder.bind(
@@ -123,7 +123,6 @@ class ClockSettingsFragment : AppbarFragment() {
                         context,
                         injector.getWallpaperColorsViewModel(),
                         injector.getClockViewFactory(activity),
-                        activity,
                     ),
                 )
                 .get(),
