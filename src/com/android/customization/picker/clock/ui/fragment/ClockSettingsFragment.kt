@@ -79,7 +79,7 @@ class ClockSettingsFragment : AppbarFragment() {
                                     R.string.lock_screen_preview_provider_authority,
                                 ),
                         ),
-                    wallpaperInfoProvider = {
+                    wallpaperInfoProvider = { forceReload ->
                         suspendCancellableCoroutine { continuation ->
                             injector
                                 .getCurrentWallpaperInfoFactory(context)
@@ -90,7 +90,7 @@ class ClockSettingsFragment : AppbarFragment() {
                                             null,
                                         )
                                     },
-                                    /* forceRefresh= */ true,
+                                    forceReload,
                                 )
                         }
                     },
@@ -112,7 +112,7 @@ class ClockSettingsFragment : AppbarFragment() {
                 ),
             lifecycleOwner = this,
             offsetToStart = displayUtils.isSingleDisplayOrUnfoldedHorizontalHinge(activity),
-            onPreviewDirty = { activity.recreate() },
+            onWallpaperPreviewDirty = { activity.recreate() },
         )
 
         ClockSettingsBinder.bind(
@@ -127,13 +127,17 @@ class ClockSettingsFragment : AppbarFragment() {
                 )
                 .get(),
             injector.getClockViewFactory(activity),
-            this@ClockSettingsFragment,
+            viewLifecycleOwner,
         )
 
         return view
     }
 
     override fun getDefaultTitle(): CharSequence {
-        return requireContext().getString(R.string.clock_settings_title)
+        return requireContext().getString(R.string.clock_color_and_size_title)
+    }
+
+    override fun getToolbarColorId(): Int {
+        return android.R.color.transparent
     }
 }

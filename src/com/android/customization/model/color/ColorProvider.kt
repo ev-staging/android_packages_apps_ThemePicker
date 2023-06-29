@@ -37,6 +37,7 @@ import com.android.customization.model.color.ColorUtils.toColorString
 import com.android.customization.picker.color.shared.model.ColorType
 import com.android.systemui.monet.ColorScheme
 import com.android.systemui.monet.Style
+import com.android.wallpaper.R
 import com.android.wallpaper.compat.WallpaperManagerCompat
 import com.android.wallpaper.module.InjectorProvider
 import kotlinx.coroutines.CoroutineScope
@@ -48,7 +49,7 @@ import kotlinx.coroutines.withContext
 /**
  * Default implementation of {@link ColorOptionsProvider} that reads preset colors from a stub APK.
  */
-class ColorProvider(context: Context, stubPackageName: String) :
+class ColorProvider(private val context: Context, stubPackageName: String) :
     ResourcesApkProvider(context, stubPackageName), ColorOptionsProvider {
 
     companion object {
@@ -244,6 +245,18 @@ class ColorProvider(context: Context, stubPackageName: String) :
                     OVERLAY_CATEGORY_SYSTEM_PALETTE,
                     if (isDefault) "" else toColorString(colorInt)
                 )
+                builder.title =
+                    when (style) {
+                        Style.TONAL_SPOT ->
+                            context.getString(R.string.content_description_dynamic_color_option)
+                        Style.SPRITZ ->
+                            context.getString(R.string.content_description_neutral_color_option)
+                        Style.VIBRANT ->
+                            context.getString(R.string.content_description_vibrant_color_option)
+                        Style.EXPRESSIVE ->
+                            context.getString(R.string.content_description_expressive_color_option)
+                        else -> context.getString(R.string.content_description_dynamic_color_option)
+                    }
                 builder.source = source
                 builder.style = style
                 // Color option index value starts from 1.
@@ -316,28 +329,68 @@ class ColorProvider(context: Context, stubPackageName: String) :
     /**
      * Returns the light theme version of the Revamped UI preview of a ColorScheme based on this
      * order: top left, top right, bottom left, bottom right
+     *
+     * This color mapping corresponds to GM3 colors: Primary (light), Primary (light), Secondary
+     * LStar 85, and Tertiary LStar 70
      */
     @ColorInt
     private fun getRevampedUILightColorPreview(colorScheme: ColorScheme): IntArray {
         return intArrayOf(
             setAlphaComponent(colorScheme.accent1.s600, ALPHA_MASK),
             setAlphaComponent(colorScheme.accent1.s600, ALPHA_MASK),
-            setAlphaComponent(colorScheme.accent2.s100, ALPHA_MASK),
-            ColorStateList.valueOf(colorScheme.accent3.s500).withLStar(59f).colors[0],
+            ColorStateList.valueOf(colorScheme.accent2.s500).withLStar(85f).colors[0],
+            setAlphaComponent(colorScheme.accent3.s300, ALPHA_MASK),
         )
     }
 
     /**
      * Returns the dark theme version of the Revamped UI preview of a ColorScheme based on this
      * order: top left, top right, bottom left, bottom right
+     *
+     * This color mapping corresponds to GM3 colors: Primary (dark), Primary (dark), Secondary LStar
+     * 35, and Tertiary LStar 70
      */
     @ColorInt
     private fun getRevampedUIDarkColorPreview(colorScheme: ColorScheme): IntArray {
         return intArrayOf(
             setAlphaComponent(colorScheme.accent1.s200, ALPHA_MASK),
             setAlphaComponent(colorScheme.accent1.s200, ALPHA_MASK),
-            setAlphaComponent(colorScheme.accent2.s700, ALPHA_MASK),
-            setAlphaComponent(colorScheme.accent3.s100, ALPHA_MASK),
+            ColorStateList.valueOf(colorScheme.accent2.s500).withLStar(35f).colors[0],
+            setAlphaComponent(colorScheme.accent3.s300, ALPHA_MASK),
+        )
+    }
+
+    /**
+     * Returns the light theme version of the Revamped UI preview of a ColorScheme based on this
+     * order: top left, top right, bottom left, bottom right
+     *
+     * This color mapping corresponds to GM3 colors: Primary LStar 0, Primary LStar 0, Secondary
+     * LStar 85, and Tertiary LStar 70
+     */
+    @ColorInt
+    private fun getRevampedUILightMonochromePreview(colorScheme: ColorScheme): IntArray {
+        return intArrayOf(
+            setAlphaComponent(colorScheme.accent1.s1000, ALPHA_MASK),
+            setAlphaComponent(colorScheme.accent1.s1000, ALPHA_MASK),
+            ColorStateList.valueOf(colorScheme.accent2.s500).withLStar(85f).colors[0],
+            setAlphaComponent(colorScheme.accent3.s300, ALPHA_MASK),
+        )
+    }
+
+    /**
+     * Returns the dark theme version of the Revamped UI preview of a ColorScheme based on this
+     * order: top left, top right, bottom left, bottom right
+     *
+     * This color mapping corresponds to GM3 colors: Primary LStar 99, Primary LStar 99, Secondary
+     * LStar 35, and Tertiary LStar 70
+     */
+    @ColorInt
+    private fun getRevampedUIDarkMonochromePreview(colorScheme: ColorScheme): IntArray {
+        return intArrayOf(
+            setAlphaComponent(colorScheme.accent1.s10, ALPHA_MASK),
+            setAlphaComponent(colorScheme.accent1.s10, ALPHA_MASK),
+            ColorStateList.valueOf(colorScheme.accent2.s500).withLStar(35f).colors[0],
+            setAlphaComponent(colorScheme.accent3.s300, ALPHA_MASK),
         )
     }
 
@@ -500,8 +553,8 @@ class ColorProvider(context: Context, stubPackageName: String) :
 
             when (style) {
                 Style.MONOCHROMATIC -> {
-                    darkColors = getRevampedUIDarkColorPreview(darkColorScheme)
-                    lightColors = getRevampedUILightColorPreview(lightColorScheme)
+                    darkColors = getRevampedUIDarkMonochromePreview(darkColorScheme)
+                    lightColors = getRevampedUILightMonochromePreview(lightColorScheme)
                 }
                 else -> {
                     darkColors = getRevampedUIPresetColorPreview(darkColorScheme, colorFromStub)

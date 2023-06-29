@@ -15,8 +15,8 @@
  */
 package com.android.customization.module
 
-import android.app.Activity
 import android.content.Context
+import androidx.activity.ComponentActivity
 import androidx.fragment.app.FragmentActivity
 import com.android.customization.model.theme.OverlayManagerCompat
 import com.android.customization.model.theme.ThemeBundleProvider
@@ -47,11 +47,13 @@ interface CustomizationInjector : Injector {
         context: Context,
     ): KeyguardQuickAffordancePickerInteractor
 
-    fun getClockRegistry(context: Context): ClockRegistry
+    fun getClockRegistry(context: Context): ClockRegistry?
 
     fun getClockPickerInteractor(context: Context): ClockPickerInteractor
 
-    fun getClockSectionViewModel(context: Context): ClockSectionViewModel
+    fun getClockSectionViewModel(
+        context: Context,
+    ): ClockSectionViewModel
 
     fun getColorPickerInteractor(
         context: Context,
@@ -67,7 +69,7 @@ interface CustomizationInjector : Injector {
         interactor: ClockPickerInteractor,
     ): ClockCarouselViewModel.Factory
 
-    fun getClockViewFactory(activity: Activity): ClockViewFactory
+    fun getClockViewFactory(activity: ComponentActivity): ClockViewFactory
 
     fun getClockSettingsViewModelFactory(
         context: Context,

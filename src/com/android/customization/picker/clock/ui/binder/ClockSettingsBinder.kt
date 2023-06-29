@@ -21,6 +21,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.SeekBar
+import androidx.core.view.doOnPreDraw
 import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
@@ -40,6 +41,7 @@ import com.android.customization.picker.color.ui.binder.ColorOptionIconBinder
 import com.android.customization.picker.common.ui.view.ItemSpacing
 import com.android.wallpaper.R
 import com.android.wallpaper.picker.option.ui.binder.OptionItemBinder
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 
@@ -73,7 +75,9 @@ object ClockSettingsBinder {
 
                 override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
                 override fun onStopTrackingTouch(seekBar: SeekBar?) {
-                    seekBar?.progress?.let { viewModel.onSliderProgressStop(it) }
+                    seekBar?.progress?.let {
+                        lifecycleOwner.lifecycleScope.launch { viewModel.onSliderProgressStop(it) }
+                    }
                 }
             }
         )
@@ -90,17 +94,6 @@ object ClockSettingsBinder {
         val colorOptionContainer = view.requireViewById<View>(R.id.color_picker_container)
         lifecycleOwner.lifecycleScope.launch {
             lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                launch {
-                    viewModel.selectedClockId
-                        .mapNotNull { it }
-                        .collect { clockId ->
-                            val clockView = clockViewFactory.getView(clockId)
-                            (clockView.parent as? ViewGroup)?.removeView(clockView)
-                            clockHostView.removeAllViews()
-                            clockHostView.addView(clockView)
-                        }
-                }
-
                 launch {
                     viewModel.seedColor.collect { seedColor ->
                         viewModel.selectedClockId.value?.let { selectedClockId ->
@@ -133,7 +126,7 @@ object ClockSettingsBinder {
                                 val item =
                                     LayoutInflater.from(view.context)
                                         .inflate(
-                                            R.layout.color_option_2,
+                                            R.layout.clock_color_option,
                                             colorOptionContainerListView,
                                             false,
                                         ) as LinearLayout
@@ -166,28 +159,52 @@ object ClockSettingsBinder {
                         if (selectedPosition != -1) {
                             val colorOptionContainerListView: LinearLayout =
                                 view.requireViewById(R.id.color_options)
+
                             val selectedView =
-                                colorOptionContainerListView.requireViewById<View>(
+                                colorOptionContainerListView.findViewById<View>(
                                     COLOR_PICKER_ITEM_PREFIX_ID + selectedPosition
                                 )
-                            selectedView.parent.requestChildFocus(selectedView, selectedView)
+                            selectedView?.parent?.requestChildFocus(selectedView, selectedView)
                         }
                     }
                 }
 
                 launch {
-                    viewModel.selectedClockSize.collect { size ->
-                        when (size) {
-                            ClockSize.DYNAMIC -> {
-                                sizeOptions.radioButtonDynamic.isChecked = true
-                                sizeOptions.radioButtonSmall.isChecked = false
-                            }
-                            ClockSize.SMALL -> {
-                                sizeOptions.radioButtonDynamic.isChecked = false
-                                sizeOptions.radioButtonSmall.isChecked = true
+                    combine(
+                            viewModel.selectedClockId.mapNotNull { it },
+                            viewModel.selectedClockSize,
+                            ::Pair,
+                        )
+                        .collect { (clockId, size) ->
+                            clockHostView.removeAllViews()
+                            val clockView =
+                                when (size) {
+                                    ClockSize.DYNAMIC -> clockViewFactory.getLargeView(clockId)
+                                    ClockSize.SMALL -> clockViewFactory.getSmallView(clockId)
+                                }
+                            // The clock view might still be attached to an existing parent. Detach
+                            // before adding to another parent.
+                            (clockView.parent as? ViewGroup)?.removeView(clockView)
+                            clockHostView.addView(clockView)
+                            when (size) {
+                                ClockSize.DYNAMIC -> {
+                                    sizeOptions.radioButtonDynamic.isChecked = true
+                                    sizeOptions.radioButtonSmall.isChecked = false
+                                    clockHostView.doOnPreDraw {
+                                        it.pivotX = it.width / 2F
+                                        it.pivotY = it.height / 2F
+                                    }
+                                }
+                                ClockSize.SMALL -> {
+                                    sizeOptions.radioButtonDynamic.isChecked = false
+                                    sizeOptions.radioButtonSmall.isChecked = true
+                                    clockHostView.doOnPreDraw {
+                                        it.pivotX = 0F
+                                        it.pivotY = 0F
+                                    }
+                                }
                             }
                         }
-                    }
                 }
 
                 launch {

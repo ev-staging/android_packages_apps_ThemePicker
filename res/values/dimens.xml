@@ -161,7 +161,7 @@
     <dimen name="clock_carousel_guideline_margin">100dp</dimen>
     <dimen name="clock_carousel_item_card_width">100dp</dimen>
     <dimen name="clock_carousel_item_card_height">108dp</dimen>
-    <dimen name="clock_carousel_guideline_margin_for_2_pane_small_width">83dp</dimen>
+    <dimen name="clock_carousel_guideline_margin_for_2_pane_small_width">122dp</dimen>
 
     <!-- Clock color and size button -->
     <dimen name="clock_color_size_button_min_height">32dp</dimen>
@@ -176,4 +176,8 @@
     copied from sysui resources
     -->
     <dimen name="keyguard_large_clock_top_margin">-60dp</dimen>
+    <!-- Dimension for the clock view, copied from sysui resources. -->
+    <dimen name="small_clock_height">114dp</dimen>
+    <dimen name="small_clock_padding_top">28dp</dimen>
+    <dimen name="clock_padding_start">28dp</dimen>
 </resources>

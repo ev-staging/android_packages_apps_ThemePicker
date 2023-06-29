@@ -20,7 +20,6 @@ package com.android.customization.picker.preview.ui.section
 import android.app.WallpaperManager
 import android.content.Context
 import android.graphics.Rect
-import android.os.Bundle
 import android.view.TouchDelegate
 import android.view.View
 import android.view.View.OnAttachStateChangeListener
@@ -34,12 +33,12 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.get
 import androidx.lifecycle.lifecycleScope
+import com.android.customization.model.themedicon.domain.interactor.ThemedIconInteractor
 import com.android.customization.picker.clock.ui.binder.ClockCarouselViewBinder
 import com.android.customization.picker.clock.ui.fragment.ClockSettingsFragment
 import com.android.customization.picker.clock.ui.view.ClockCarouselView
 import com.android.customization.picker.clock.ui.view.ClockViewFactory
 import com.android.customization.picker.clock.ui.viewmodel.ClockCarouselViewModel
-import com.android.systemui.shared.quickaffordance.shared.model.KeyguardPreviewConstants
 import com.android.wallpaper.R
 import com.android.wallpaper.model.CustomizationSectionController.CustomizationSectionNavigationController
 import com.android.wallpaper.model.WallpaperColorsViewModel
@@ -53,7 +52,10 @@ import com.android.wallpaper.util.DisplayUtils
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
-/** Controls the screen preview section. */
+/**
+ * A ThemePicker version of the [ScreenPreviewSectionController] that adjusts the preview for the
+ * clock carousel, and also updates the preview on theme changes.
+ */
 class PreviewWithClockCarouselSectionController(
     activity: ComponentActivity,
     private val lifecycleOwner: LifecycleOwner,
@@ -66,10 +68,11 @@ class PreviewWithClockCarouselSectionController(
     wallpaperPreviewNavigator: WallpaperPreviewNavigator,
     private val navigationController: CustomizationSectionNavigationController,
     wallpaperInteractor: WallpaperInteractor,
+    themedIconInteractor: ThemedIconInteractor,
     wallpaperManager: WallpaperManager,
     private val isTwoPaneAndSmallWidth: Boolean,
 ) :
-    ScreenPreviewSectionController(
+    PreviewWithThemeSectionController(
         activity,
         lifecycleOwner,
         screen,
@@ -78,6 +81,7 @@ class PreviewWithClockCarouselSectionController(
         displayUtils,
         wallpaperPreviewNavigator,
         wallpaperInteractor,
+        themedIconInteractor,
         wallpaperManager,
         isTwoPaneAndSmallWidth,
     ) {
@@ -163,7 +167,7 @@ class PreviewWithClockCarouselSectionController(
                                     viewModel = viewModel,
                                     clockViewFactory = clockViewFactory,
                                     lifecycleOwner = lifecycleOwner,
-                                    hideSmartspace = ::hideSmartspace,
+                                    isTwoPaneAndSmallWidth = isTwoPaneAndSmallWidth,
                                 )
                                 if (onAttachStateChangeListener != null) {
                                     carouselView.carousel.removeOnAttachStateChangeListener(
@@ -181,17 +185,5 @@ class PreviewWithClockCarouselSectionController(
         }
 
         return view
-    }
-
-    private fun hideSmartspace(hide: Boolean) {
-        previewViewBinding.sendMessage(
-            KeyguardPreviewConstants.MESSAGE_ID_HIDE_SMART_SPACE,
-            Bundle().apply {
-                putBoolean(
-                    KeyguardPreviewConstants.KEY_HIDE_SMART_SPACE,
-                    hide,
-                )
-            }
-        )
     }
 }
