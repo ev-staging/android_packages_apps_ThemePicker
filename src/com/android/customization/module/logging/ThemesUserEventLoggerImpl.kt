@@ -19,35 +19,22 @@ import android.app.WallpaperManager
 import android.content.Intent
 import android.stats.style.StyleEnums
 import android.text.TextUtils
-import com.android.customization.model.color.ColorOption
 import com.android.customization.model.grid.GridOption
-import com.android.customization.module.SysUiStatsLogger
+import com.android.customization.module.logging.ThemesUserEventLogger.ClockSize
+import com.android.customization.module.logging.ThemesUserEventLogger.ColorSource
 import com.android.systemui.shared.system.SysUiStatsLog
 import com.android.wallpaper.module.WallpaperPersister.DEST_BOTH
 import com.android.wallpaper.module.WallpaperPersister.DEST_HOME_SCREEN
 import com.android.wallpaper.module.WallpaperPersister.DEST_LOCK_SCREEN
 import com.android.wallpaper.module.WallpaperPreferences
-import com.android.wallpaper.module.logging.NoOpUserEventLogger
 import com.android.wallpaper.module.logging.UserEventLogger.EffectStatus
 import com.android.wallpaper.module.logging.UserEventLogger.SetWallpaperEntryPoint
 import com.android.wallpaper.module.logging.UserEventLogger.WallpaperDestination
 import com.android.wallpaper.util.LaunchSourceUtils
 
 /** StatsLog-backed implementation of [ThemesUserEventLogger]. */
-class StatsLogUserEventLogger(private val preferences: WallpaperPreferences) :
-    NoOpUserEventLogger(), ThemesUserEventLogger {
-
-    override fun logAppLaunched(launchSource: Intent) {
-        SysUiStatsLogger(SysUiStatsLog.STYLE_UICHANGED__ACTION__APP_LAUNCHED)
-            .setLaunchedPreference(getAppLaunchSource(launchSource))
-            .log()
-    }
-
-    override fun logActionClicked(collectionId: String, actionLabelResId: Int) {
-        SysUiStatsLogger(StyleEnums.WALLPAPER_EXPLORE)
-            .setWallpaperCategoryHash(getIdHashCode(collectionId))
-            .log()
-    }
+class ThemesUserEventLoggerImpl(private val preferences: WallpaperPreferences) :
+    ThemesUserEventLogger {
 
     override fun logSnapshot() {
         SysUiStatsLogger(StyleEnums.SNAPSHOT)
@@ -56,6 +43,12 @@ class StatsLogUserEventLogger(private val preferences: WallpaperPreferences) :
             .setLockWallpaperCategoryHash(preferences.getLockCategoryHash())
             .setLockWallpaperIdHash(preferences.getLockWallpaperIdHash())
             .setEffectIdHash(getIdHashCode(preferences.homeWallpaperEffects))
+            .log()
+    }
+
+    override fun logAppLaunched(launchSource: Intent) {
+        SysUiStatsLogger(StyleEnums.APP_LAUNCHED)
+            .setLaunchedPreference(launchSource.getAppLaunchSource())
             .log()
     }
 
@@ -114,20 +107,74 @@ class StatsLogUserEventLogger(private val preferences: WallpaperPreferences) :
             .log()
     }
 
-    override fun logColorApplied(action: Int, colorOption: ColorOption) {
-        SysUiStatsLogger(action)
-            .setColorPreference(colorOption.index)
-            .setColorVariant(colorOption.style.ordinal + 1)
+    override fun logResetApplied() {
+        SysUiStatsLogger(StyleEnums.RESET_APPLIED).log()
+    }
+
+    override fun logWallpaperExploreButtonClicked() {
+        SysUiStatsLogger(StyleEnums.WALLPAPER_EXPLORE).log()
+    }
+
+    override fun logThemeColorApplied(
+        @ColorSource source: Int,
+        variant: Int,
+        seedColor: Int,
+    ) {
+        SysUiStatsLogger(StyleEnums.THEME_COLOR_APPLIED)
+            .setColorSource(source)
+            .setColorVariant(variant)
+            .setSeedColor(seedColor)
             .log()
     }
 
     override fun logGridApplied(grid: GridOption) {
-        SysUiStatsLogger(StyleEnums.PICKER_APPLIED).setLauncherGrid(grid.cols).log()
+        SysUiStatsLogger(StyleEnums.GRID_APPLIED).setLauncherGrid(grid.getLauncherGridInt()).log()
     }
 
-    private fun getAppLaunchSource(launchSource: Intent): Int {
-        return if (launchSource.hasExtra(LaunchSourceUtils.WALLPAPER_LAUNCH_SOURCE)) {
-            when (launchSource.getStringExtra(LaunchSourceUtils.WALLPAPER_LAUNCH_SOURCE)) {
+    override fun logClockApplied(clockId: String) {
+        SysUiStatsLogger(StyleEnums.CLOCK_APPLIED).setClockPackageHash(getIdHashCode(clockId)).log()
+    }
+
+    override fun logClockColorApplied(seedColor: Int) {
+        SysUiStatsLogger(StyleEnums.CLOCK_COLOR_APPLIED).setSeedColor(seedColor).log()
+    }
+
+    override fun logClockSizeApplied(@ClockSize clockSize: Int) {
+        SysUiStatsLogger(StyleEnums.CLOCK_SIZE_APPLIED).setClockSize(clockSize).log()
+    }
+
+    override fun logThemedIconApplied(useThemeIcon: Boolean) {
+        SysUiStatsLogger(StyleEnums.THEMED_ICON_APPLIED).setToggleOn(useThemeIcon).log()
+    }
+
+    override fun logLockScreenNotificationApplied(showLockScreenNotifications: Boolean) {
+        SysUiStatsLogger(StyleEnums.LOCK_SCREEN_NOTIFICATION_APPLIED)
+            .setToggleOn(showLockScreenNotifications)
+            .log()
+    }
+
+    override fun logShortcutApplied(shortcut: String, shortcutSlotId: String) {
+        SysUiStatsLogger(StyleEnums.SHORTCUT_APPLIED)
+            .setShortcut(shortcut)
+            .setShortcutSlotId(shortcutSlotId)
+            .log()
+    }
+
+    override fun logDarkThemeApplied(useDarkTheme: Boolean) {
+        SysUiStatsLogger(StyleEnums.DARK_THEME_APPLIED).setToggleOn(useDarkTheme).log()
+    }
+
+    /**
+     * The grid integer depends on the column and row numbers. For example: 4x5 is 405 13x37 is 1337
+     * The upper limit for the column / row count is 99.
+     */
+    private fun GridOption.getLauncherGridInt(): Int {
+        return cols * 100 + rows
+    }
+
+    private fun Intent.getAppLaunchSource(): Int {
+        return if (hasExtra(LaunchSourceUtils.WALLPAPER_LAUNCH_SOURCE)) {
+            when (getStringExtra(LaunchSourceUtils.WALLPAPER_LAUNCH_SOURCE)) {
                 LaunchSourceUtils.LAUNCH_SOURCE_LAUNCHER ->
                     SysUiStatsLog.STYLE_UICHANGED__LAUNCHED_PREFERENCE__LAUNCHED_LAUNCHER
                 LaunchSourceUtils.LAUNCH_SOURCE_SETTINGS ->
@@ -142,17 +189,11 @@ class StatsLogUserEventLogger(private val preferences: WallpaperPreferences) :
                     SysUiStatsLog
                         .STYLE_UICHANGED__LAUNCHED_PREFERENCE__LAUNCHED_PREFERENCE_UNSPECIFIED
             }
-        } else if (launchSource.hasExtra(LaunchSourceUtils.LAUNCH_SETTINGS_SEARCH)) {
+        } else if (hasExtra(LaunchSourceUtils.LAUNCH_SETTINGS_SEARCH)) {
             SysUiStatsLog.STYLE_UICHANGED__LAUNCHED_PREFERENCE__LAUNCHED_SETTINGS_SEARCH
-        } else if (
-            launchSource.action != null &&
-                launchSource.action == WallpaperManager.ACTION_CROP_AND_SET_WALLPAPER
-        ) {
+        } else if (action != null && action == WallpaperManager.ACTION_CROP_AND_SET_WALLPAPER) {
             SysUiStatsLog.STYLE_UICHANGED__LAUNCHED_PREFERENCE__LAUNCHED_CROP_AND_SET_ACTION
-        } else if (
-            launchSource.categories != null &&
-                launchSource.categories.contains(Intent.CATEGORY_LAUNCHER)
-        ) {
+        } else if (categories != null && categories.contains(Intent.CATEGORY_LAUNCHER)) {
             SysUiStatsLog.STYLE_UICHANGED__LAUNCHED_PREFERENCE__LAUNCHED_LAUNCH_ICON
         } else {
             SysUiStatsLog.STYLE_UICHANGED__LAUNCHED_PREFERENCE__LAUNCHED_PREFERENCE_UNSPECIFIED

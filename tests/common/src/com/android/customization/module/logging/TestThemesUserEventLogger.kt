@@ -13,17 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.customization.testing
+package com.android.customization.module.logging
 
-import com.android.customization.model.color.ColorOption
 import com.android.customization.model.grid.GridOption
-import com.android.customization.module.logging.ThemesUserEventLogger
-import com.android.wallpaper.testing.TestUserEventLogger
+import com.android.customization.module.logging.ThemesUserEventLogger.ColorSource
+import com.android.wallpaper.module.logging.TestUserEventLogger
 
 /** Test implementation of [ThemesUserEventLogger]. */
 class TestThemesUserEventLogger : TestUserEventLogger(), ThemesUserEventLogger {
 
-    override fun logColorApplied(action: Int, colorOption: ColorOption) {}
+    override fun logThemeColorApplied(@ColorSource source: Int, variant: Int, seedColor: Int) {}
 
     override fun logGridApplied(grid: GridOption) {}
+
+    override fun logClockApplied(clockId: String) {}
+
+    override fun logClockColorApplied(seedColor: Int) {}
+
+    override fun logClockSizeApplied(clockSize: Int) {}
+
+    override fun logThemedIconApplied(useThemeIcon: Boolean) {}
+
+    override fun logLockScreenNotificationApplied(showLockScreenNotifications: Boolean) {}
+
+    override fun logShortcutApplied(shortcut: String, shortcutSlotId: String) {}
+
+    override fun logDarkThemeApplied(useDarkTheme: Boolean) {}
 }
