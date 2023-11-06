@@ -15,6 +15,7 @@
  */
 package com.android.customization.module
 
+import android.app.Activity
 import android.app.UiModeManager
 import android.app.WallpaperManager
 import android.content.Context
@@ -37,7 +38,6 @@ import com.android.customization.model.themedicon.data.repository.ThemeIconRepos
 import com.android.customization.model.themedicon.domain.interactor.ThemedIconInteractor
 import com.android.customization.model.themedicon.domain.interactor.ThemedIconSnapshotRestorer
 import com.android.customization.module.logging.ThemesUserEventLogger
-import com.android.customization.module.logging.ThemesUserEventLoggerImpl
 import com.android.customization.picker.clock.data.repository.ClockPickerRepositoryImpl
 import com.android.customization.picker.clock.data.repository.ClockRegistryProvider
 import com.android.customization.picker.clock.domain.interactor.ClockPickerInteractor
@@ -45,7 +45,6 @@ import com.android.customization.picker.clock.domain.interactor.ClockPickerSnaps
 import com.android.customization.picker.clock.ui.view.ClockViewFactory
 import com.android.customization.picker.clock.ui.view.ClockViewFactoryImpl
 import com.android.customization.picker.clock.ui.viewmodel.ClockCarouselViewModel
-import com.android.customization.picker.clock.ui.viewmodel.ClockSectionViewModel
 import com.android.customization.picker.clock.ui.viewmodel.ClockSettingsViewModel
 import com.android.customization.picker.color.data.repository.ColorPickerRepositoryImpl
 import com.android.customization.picker.color.domain.interactor.ColorPickerInteractor
@@ -72,7 +71,6 @@ import com.android.wallpaper.dispatchers.MainDispatcher
 import com.android.wallpaper.module.CustomizationSections
 import com.android.wallpaper.module.FragmentFactory
 import com.android.wallpaper.module.WallpaperPicker2Injector
-import com.android.wallpaper.module.logging.UserEventLogger
 import com.android.wallpaper.picker.CustomizationPickerActivity
 import com.android.wallpaper.picker.customization.data.content.WallpaperClientImpl
 import com.android.wallpaper.picker.customization.data.repository.WallpaperColorsRepository
@@ -92,9 +90,9 @@ internal constructor(
     @MainDispatcher private val mainScope: CoroutineScope,
     @MainDispatcher private val mainDispatcher: CoroutineDispatcher,
     @BackgroundDispatcher private val bgDispatcher: CoroutineDispatcher,
-) : WallpaperPicker2Injector(mainScope, bgDispatcher), CustomizationInjector {
+    private val userEventLogger: ThemesUserEventLogger,
+) : WallpaperPicker2Injector(mainScope, bgDispatcher, userEventLogger), CustomizationInjector {
     private var customizationSections: CustomizationSections? = null
-    private var userEventLogger: UserEventLogger? = null
     private var wallpaperInteractor: WallpaperInteractor? = null
     private var keyguardQuickAffordancePickerInteractor: KeyguardQuickAffordancePickerInteractor? =
         null
@@ -107,9 +105,8 @@ internal constructor(
         null
     private var notificationsSnapshotRestorer: NotificationsSnapshotRestorer? = null
     private var clockPickerInteractor: ClockPickerInteractor? = null
-    private var clockSectionViewModel: ClockSectionViewModel? = null
     private var clockCarouselViewModelFactory: ClockCarouselViewModel.Factory? = null
-    private var clockViewFactories: MutableMap<Int, ClockViewFactory> = HashMap()
+    private var clockViewFactory: ClockViewFactory? = null
     private var clockPickerSnapshotRestorer: ClockPickerSnapshotRestorer? = null
     private var notificationsInteractor: NotificationsInteractor? = null
     private var notificationSectionViewModelFactory: NotificationSectionViewModel.Factory? = null
@@ -166,10 +163,7 @@ internal constructor(
 
     @Synchronized
     override fun getUserEventLogger(context: Context): ThemesUserEventLogger {
-        return userEventLogger as? ThemesUserEventLogger
-            ?: ThemesUserEventLoggerImpl(getPreferences(context.applicationContext)).also {
-                userEventLogger = it
-            }
+        return userEventLogger
     }
 
     override fun getFragmentFactory(): FragmentFactory? {
@@ -244,6 +238,7 @@ internal constructor(
                     getKeyguardQuickAffordancePickerInteractor(context),
                     getWallpaperInteractor(context),
                     getCurrentWallpaperInfoFactory(context),
+                    getUserEventLogger(context),
                 )
                 .also { keyguardQuickAffordancePickerViewModelFactory = it }
     }
@@ -254,7 +249,7 @@ internal constructor(
         val client = getKeyguardQuickAffordancePickerProviderClient(context)
         val appContext = context.applicationContext
         return KeyguardQuickAffordancePickerInteractor(
-            KeyguardQuickAffordancePickerRepository(client),
+            KeyguardQuickAffordancePickerRepository(client, getApplicationCoroutineScope()),
             client
         ) {
             getKeyguardQuickAffordanceSnapshotRestorer(appContext)
@@ -349,17 +344,6 @@ internal constructor(
                 .also { clockPickerInteractor = it }
     }
 
-    override fun getClockSectionViewModel(
-        context: Context,
-    ): ClockSectionViewModel {
-        return clockSectionViewModel
-            ?: ClockSectionViewModel(
-                    context.applicationContext,
-                    getClockPickerInteractor(context.applicationContext)
-                )
-                .also { clockSectionViewModel = it }
-    }
-
     override fun getClockCarouselViewModelFactory(
         interactor: ClockPickerInteractor,
         clockViewFactory: ClockViewFactory,
@@ -371,8 +355,7 @@ internal constructor(
     }
 
     override fun getClockViewFactory(activity: ComponentActivity): ClockViewFactory {
-        val activityHashCode = activity.hashCode()
-        return clockViewFactories[activityHashCode]
+        return clockViewFactory
             ?: ClockViewFactoryImpl(
                     activity.applicationContext,
                     ScreenSizeCalculator.getInstance()
@@ -381,13 +364,13 @@ internal constructor(
                     getClockRegistry(activity.applicationContext),
                 )
                 .also {
-                    clockViewFactories[activityHashCode] = it
+                    clockViewFactory = it
                     activity.lifecycle.addObserver(
                         object : DefaultLifecycleObserver {
                             override fun onDestroy(owner: LifecycleOwner) {
                                 super.onDestroy(owner)
-                                clockViewFactories[activityHashCode]?.onDestroy()
-                                clockViewFactories.remove(activityHashCode)
+                                if ((owner as Activity).isChangingConfigurations()) return
+                                clockViewFactory?.onDestroy()
                             }
                         }
                     )

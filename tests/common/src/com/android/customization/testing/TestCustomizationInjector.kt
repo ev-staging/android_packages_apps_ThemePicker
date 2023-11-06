@@ -5,12 +5,10 @@ import android.content.res.Resources
 import androidx.activity.ComponentActivity
 import com.android.customization.module.CustomizationInjector
 import com.android.customization.module.CustomizationPreferences
-import com.android.customization.module.logging.TestThemesUserEventLogger
 import com.android.customization.module.logging.ThemesUserEventLogger
 import com.android.customization.picker.clock.domain.interactor.ClockPickerInteractor
 import com.android.customization.picker.clock.ui.view.ClockViewFactory
 import com.android.customization.picker.clock.ui.viewmodel.ClockCarouselViewModel
-import com.android.customization.picker.clock.ui.viewmodel.ClockSectionViewModel
 import com.android.customization.picker.clock.ui.viewmodel.ClockSettingsViewModel
 import com.android.customization.picker.color.domain.interactor.ColorPickerInteractor
 import com.android.customization.picker.color.ui.viewmodel.ColorPickerViewModel
@@ -25,10 +23,10 @@ import javax.inject.Singleton
 @Singleton
 open class TestCustomizationInjector
 @Inject
-constructor(private val customPrefs: TestDefaultCustomizationPreferences) :
-    TestInjector(), CustomizationInjector {
-    private var themesUserEventLogger: ThemesUserEventLogger? = null
-
+constructor(
+    private val customPrefs: TestDefaultCustomizationPreferences,
+    private val themesUserEventLogger: ThemesUserEventLogger
+) : TestInjector(themesUserEventLogger), CustomizationInjector {
     /////////////////
     // CustomizationInjector implementations
     /////////////////
@@ -48,10 +46,6 @@ constructor(private val customPrefs: TestDefaultCustomizationPreferences) :
     }
 
     override fun getClockPickerInteractor(context: Context): ClockPickerInteractor {
-        throw UnsupportedOperationException("not implemented")
-    }
-
-    override fun getClockSectionViewModel(context: Context): ClockSectionViewModel {
         throw UnsupportedOperationException("not implemented")
     }
 
@@ -95,6 +89,5 @@ constructor(private val customPrefs: TestDefaultCustomizationPreferences) :
 
     override fun getUserEventLogger(context: Context): UserEventLogger {
         return themesUserEventLogger
-            ?: TestThemesUserEventLogger().also { themesUserEventLogger = it }
     }
 }
