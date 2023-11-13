@@ -124,27 +124,29 @@ internal constructor(
     private var clockRegistryProvider: ClockRegistryProvider? = null
 
     override fun getCustomizationSections(activity: ComponentActivity): CustomizationSections {
+        val appContext = activity.applicationContext
+        val clockViewFactory = getClockViewFactory(activity)
+        val resources = activity.resources
         return customizationSections
             ?: DefaultCustomizationSections(
                     getColorPickerViewModelFactory(
-                        context = activity,
+                        context = appContext,
                         wallpaperColorsRepository = getWallpaperColorsRepository(),
                     ),
-                    getKeyguardQuickAffordancePickerViewModelFactory(activity),
-                    NotificationSectionViewModel.Factory(
-                        interactor = getNotificationsInteractor(activity),
-                    ),
+                    getKeyguardQuickAffordancePickerViewModelFactory(appContext),
+                    getNotificationSectionViewModelFactory(appContext),
                     getFlags(),
                     getClockCarouselViewModelFactory(
-                        getClockPickerInteractor(activity.applicationContext),
-                        getClockViewFactory(activity),
-                        resources = activity.resources,
+                        interactor = getClockPickerInteractor(appContext),
+                        clockViewFactory = clockViewFactory,
+                        resources = resources,
+                        logger = userEventLogger,
                     ),
-                    getClockViewFactory(activity),
-                    getDarkModeSnapshotRestorer(activity),
-                    getThemedIconSnapshotRestorer(activity),
+                    clockViewFactory,
+                    getThemedIconSnapshotRestorer(appContext),
                     getThemedIconInteractor(),
-                    getColorPickerInteractor(activity, getWallpaperColorsRepository()),
+                    getColorPickerInteractor(appContext, getWallpaperColorsRepository()),
+                    getUserEventLogger(appContext),
                 )
                 .also { customizationSections = it }
     }
@@ -282,6 +284,7 @@ internal constructor(
         return notificationSectionViewModelFactory
             ?: NotificationSectionViewModel.Factory(
                     interactor = getNotificationsInteractor(context),
+                    logger = getUserEventLogger(context),
                 )
                 .also { notificationSectionViewModelFactory = it }
     }
@@ -348,9 +351,16 @@ internal constructor(
         interactor: ClockPickerInteractor,
         clockViewFactory: ClockViewFactory,
         resources: Resources,
+        logger: ThemesUserEventLogger,
     ): ClockCarouselViewModel.Factory {
         return clockCarouselViewModelFactory
-            ?: ClockCarouselViewModel.Factory(interactor, bgDispatcher, clockViewFactory, resources)
+            ?: ClockCarouselViewModel.Factory(
+                    interactor,
+                    bgDispatcher,
+                    clockViewFactory,
+                    resources,
+                    logger,
+                )
                 .also { clockCarouselViewModelFactory = it }
     }
 
@@ -484,6 +494,7 @@ internal constructor(
                         context,
                         wallpaperColorsRepository,
                     ),
+                    userEventLogger,
                 ) { clockId ->
                     clockId?.let { clockViewFactory.getController(clockId).config.isReactiveToTone }
                         ?: false
