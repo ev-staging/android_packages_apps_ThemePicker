@@ -207,7 +207,8 @@ internal constructor(
                                 WallpaperClientImpl(
                                     context = appContext,
                                     infoFactory = getCurrentWallpaperInfoFactory(appContext),
-                                    wallpaperManager = WallpaperManager.getInstance(appContext)
+                                    wallpaperManager = WallpaperManager.getInstance(appContext),
+                                    wallpaperPreferences = getPreferences(appContext)
                                 ),
                             wallpaperPreferences = getPreferences(context = appContext),
                             backgroundDispatcher = bgDispatcher,
@@ -423,6 +424,7 @@ internal constructor(
             ?: ColorPickerViewModel.Factory(
                     context.applicationContext,
                     getColorPickerInteractor(context, wallpaperColorsRepository),
+                    userEventLogger,
                 )
                 .also { colorPickerViewModelFactory = it }
     }
