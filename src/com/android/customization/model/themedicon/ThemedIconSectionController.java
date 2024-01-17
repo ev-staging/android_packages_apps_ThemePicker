@@ -29,6 +29,7 @@ import com.android.customization.picker.themedicon.ThemedIconSectionView;
 import com.android.wallpaper.R;
 import com.android.wallpaper.model.CustomizationSectionController;
 
+// TODO (b/311712452): Refactor CustomizationSectionController to use recommended arch UI components
 /** The {@link CustomizationSectionController} for themed icon section. */
 public class ThemedIconSectionController implements
         CustomizationSectionController<ThemedIconSectionView> {
@@ -79,7 +80,10 @@ public class ThemedIconSectionController implements
         mThemedIconSectionView.setViewListener(this::onViewActivated);
         mThemedIconSectionView.getSwitch().setChecked(mSavedThemedIconEnabled);
         mThemedIconOptionsProvider.fetchThemedIconEnabled(
-                enabled -> mThemedIconSectionView.getSwitch().setChecked(enabled));
+                enabled -> {
+                    mInteractor.setActivated(enabled);
+                    mThemedIconSectionView.getSwitch().setChecked(enabled);
+                });
         mInteractor.isActivatedAsLiveData().observeForever(mIsActivatedChangeObserver);
         return mThemedIconSectionView;
     }
