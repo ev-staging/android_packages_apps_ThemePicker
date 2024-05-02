@@ -17,29 +17,38 @@
 package com.android.customization.model.picker.settings.domain.interactor
 
 import androidx.test.filters.SmallTest
-import com.android.customization.picker.settings.data.repository.ColorContrastSectionRepository
 import com.android.customization.picker.settings.domain.interactor.ColorContrastSectionInteractor
+import com.android.wallpaper.testing.FakeUiModeManager
+import dagger.hilt.android.testing.HiltAndroidRule
+import dagger.hilt.android.testing.HiltAndroidTest
+import javax.inject.Inject
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.Assert.assertEquals
+import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.Mockito.mock
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
 import org.robolectric.RobolectricTestRunner
 
 @SmallTest
+@HiltAndroidTest
 @RunWith(RobolectricTestRunner::class)
 class ColorContrastSectionInteractorTest {
+    @get:Rule var hiltRule = HiltAndroidRule(this)
+
+    @Inject lateinit var uiModeManager: FakeUiModeManager
+    @Inject lateinit var interactor: ColorContrastSectionInteractor
+
+    @Before
+    fun setUp() {
+        hiltRule.inject()
+    }
 
     @Test
     fun contrastEmitCorrectValuesFromRepository() = runBlockingTest {
-        val mockRepository: ColorContrastSectionRepository = mock()
         val expectedContrast = 1.5f
-        whenever(mockRepository.contrast).thenReturn(flowOf(expectedContrast))
-        val interactor = ColorContrastSectionInteractor(mockRepository)
+        uiModeManager.setContrast(expectedContrast)
 
         val result = interactor.contrast.first()
 

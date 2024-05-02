@@ -41,7 +41,7 @@
     <string name="clock_size_dynamic_description" msgid="2776620745774561662">"Saiz jam berubah mengikut kandungan skrin kunci"</string>
     <string name="clock_size_large" msgid="3143248715744138979">"Besar"</string>
     <string name="clock_size_small" msgid="2280449912094164133">"Kecil"</string>
-    <string name="clock_size_small_description" msgid="4089511196955732480">"Jam kecil yang dipaparkan pada penjuru skrin anda"</string>
+    <string name="clock_size_small_description" msgid="4089511196955732480">"Jam kecil dipaparkan di penjuru skrin"</string>
     <string name="grid_title" msgid="1688173478777254123">"Grid apl"</string>
     <string name="apply_theme_btn" msgid="6293081192321303991">"Gunakan"</string>
     <string name="edit_custom_theme_lbl" msgid="5211377705710775224">"Ketik untuk edit"</string>
@@ -62,7 +62,7 @@
     <string name="preview_name_icon" msgid="6818927315316316440">"Ikon"</string>
     <string name="preview_name_color" msgid="8776203144994416172">"Warna"</string>
     <string name="preview_name_shape" msgid="5676971146080968721">"Bentuk"</string>
-    <string name="preview_name_wallpaper" msgid="1738652462949531828">"Kertas dinding"</string>
+    <string name="preview_name_wallpaper" msgid="1738652462949531828">"Hiasan latar"</string>
     <string name="font_card_title" msgid="2343292653502548685">"ABC • abc • 123"</string>
     <string name="font_card_body" msgid="6790525594503904468">"Tambahkan fon kegemaran anda pada setiap skrin"</string>
     <string name="grid_options_title" msgid="7071930966989877023">"Pilih saiz grid"</string>
@@ -128,6 +128,10 @@
     <string name="keyguard_affordance_enablement_dialog_dismiss_button" msgid="629754625264422508">"Selesai"</string>
     <string name="keyguard_quick_affordance_title" msgid="4242813186995735584">"Pintasan"</string>
     <string name="keyguard_quick_affordance_section_title" msgid="2806304242671717309">"Pintasan"</string>
+    <string name="color_contrast_section_title" msgid="7194809124718896091">"Kontras warna"</string>
+    <string name="color_contrast_default_title" msgid="7954235103549276978">"Lalai"</string>
+    <string name="color_contrast_medium_title" msgid="8071574793250090215">"Sederhana"</string>
+    <string name="color_contrast_high_title" msgid="5554685752479470200">"Tinggi"</string>
     <string name="keyguard_quick_affordance_two_selected_template" msgid="1757099194522296363">"<xliff:g id="FIRST">%1$s</xliff:g>, <xliff:g id="SECOND">%2$s</xliff:g>"</string>
     <string name="keyguard_quick_affordance_none_selected" msgid="8494127020144112003">"Tiada"</string>
     <string name="show_notifications_on_lock_screen" msgid="4157744243084646720">"Tunjukkan pemberitahuan pada skrin kunci"</string>

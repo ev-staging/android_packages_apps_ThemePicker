@@ -128,11 +128,15 @@
     <string name="keyguard_affordance_enablement_dialog_dismiss_button" msgid="629754625264422508">"हो गया"</string>
     <string name="keyguard_quick_affordance_title" msgid="4242813186995735584">"शॉर्टकट"</string>
     <string name="keyguard_quick_affordance_section_title" msgid="2806304242671717309">"शॉर्टकट"</string>
+    <string name="color_contrast_section_title" msgid="7194809124718896091">"कलर कंट्रास्ट"</string>
+    <string name="color_contrast_default_title" msgid="7954235103549276978">"डिफ़ॉल्ट"</string>
+    <string name="color_contrast_medium_title" msgid="8071574793250090215">"मीडियम"</string>
+    <string name="color_contrast_high_title" msgid="5554685752479470200">"हाई"</string>
     <string name="keyguard_quick_affordance_two_selected_template" msgid="1757099194522296363">"<xliff:g id="FIRST">%1$s</xliff:g>, <xliff:g id="SECOND">%2$s</xliff:g>"</string>
     <string name="keyguard_quick_affordance_none_selected" msgid="8494127020144112003">"कोई नहीं"</string>
     <string name="show_notifications_on_lock_screen" msgid="4157744243084646720">"लॉक स्क्रीन पर सूचनाएं दिखाएं"</string>
     <string name="more_settings_section_title" msgid="1331425454775815958">"लॉक स्क्रीन के और विकल्प"</string>
-    <string name="more_settings_section_description" msgid="1860115709122398325">"निजता, \'अभी चल रहा है\' सुविधा, और अन्य सुविधा"</string>
+    <string name="more_settings_section_description" msgid="1860115709122398325">"निजता सेटिंग, \'अभी चल रहा है\' से जुड़ी सेटिंग, और अन्य सेटिंग"</string>
     <string name="more_colors" msgid="3191071655353004591">"कुछ और रंग"</string>
     <string name="content_description_dynamic_color_option" msgid="2191721655642529886">"प्राइमरी डाइनैमिक थीम"</string>
     <string name="content_description_neutral_color_option" msgid="3385443834001275301">"प्राइमरी न्यूट्रल थीम"</string>

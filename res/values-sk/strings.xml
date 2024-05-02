@@ -42,7 +42,7 @@
     <string name="clock_size_large" msgid="3143248715744138979">"Veľké"</string>
     <string name="clock_size_small" msgid="2280449912094164133">"Malé"</string>
     <string name="clock_size_small_description" msgid="4089511196955732480">"V rohu obrazovky sa zobrazujú malé hodiny"</string>
-    <string name="grid_title" msgid="1688173478777254123">"Mriežka aplik."</string>
+    <string name="grid_title" msgid="1688173478777254123">"Mriežka aplikácií"</string>
     <string name="apply_theme_btn" msgid="6293081192321303991">"Použiť"</string>
     <string name="edit_custom_theme_lbl" msgid="5211377705710775224">"Klepnutím upravte"</string>
     <string name="keep_my_wallpaper" msgid="8012385376769568517">"Ponechať aktuálnu tapetu"</string>
@@ -128,6 +128,10 @@
     <string name="keyguard_affordance_enablement_dialog_dismiss_button" msgid="629754625264422508">"Hotovo"</string>
     <string name="keyguard_quick_affordance_title" msgid="4242813186995735584">"Skratky"</string>
     <string name="keyguard_quick_affordance_section_title" msgid="2806304242671717309">"Skratky"</string>
+    <string name="color_contrast_section_title" msgid="7194809124718896091">"Farebný kontrast"</string>
+    <string name="color_contrast_default_title" msgid="7954235103549276978">"Predvolený"</string>
+    <string name="color_contrast_medium_title" msgid="8071574793250090215">"Stredný"</string>
+    <string name="color_contrast_high_title" msgid="5554685752479470200">"Vysoký"</string>
     <string name="keyguard_quick_affordance_two_selected_template" msgid="1757099194522296363">"<xliff:g id="FIRST">%1$s</xliff:g>, <xliff:g id="SECOND">%2$s</xliff:g>"</string>
     <string name="keyguard_quick_affordance_none_selected" msgid="8494127020144112003">"Žiadne"</string>
     <string name="show_notifications_on_lock_screen" msgid="4157744243084646720">"Zobrazovať upozornenia na uzamknutej obrazovke"</string>

@@ -42,7 +42,7 @@
     <string name="clock_size_large" msgid="3143248715744138979">"Чоң"</string>
     <string name="clock_size_small" msgid="2280449912094164133">"Кичине"</string>
     <string name="clock_size_small_description" msgid="4089511196955732480">"Кичинекей саат экрандын бурчунда көрүнүп турат"</string>
-    <string name="grid_title" msgid="1688173478777254123">"Колдонмонун торчосу"</string>
+    <string name="grid_title" msgid="1688173478777254123">"Колдонмолор торчосу"</string>
     <string name="apply_theme_btn" msgid="6293081192321303991">"Колдонуу"</string>
     <string name="edit_custom_theme_lbl" msgid="5211377705710775224">"Өзгөртүү үчүн таптап коюңуз"</string>
     <string name="keep_my_wallpaper" msgid="8012385376769568517">"Учурдагы тушкагаз калсын"</string>
@@ -128,6 +128,10 @@
     <string name="keyguard_affordance_enablement_dialog_dismiss_button" msgid="629754625264422508">"Бүттү"</string>
     <string name="keyguard_quick_affordance_title" msgid="4242813186995735584">"Ыкчам баскычтар"</string>
     <string name="keyguard_quick_affordance_section_title" msgid="2806304242671717309">"Ыкчам баскычтар"</string>
+    <string name="color_contrast_section_title" msgid="7194809124718896091">"Түс контрасты"</string>
+    <string name="color_contrast_default_title" msgid="7954235103549276978">"Демейки"</string>
+    <string name="color_contrast_medium_title" msgid="8071574793250090215">"Орточо"</string>
+    <string name="color_contrast_high_title" msgid="5554685752479470200">"Жогору"</string>
     <string name="keyguard_quick_affordance_two_selected_template" msgid="1757099194522296363">"<xliff:g id="FIRST">%1$s</xliff:g>, <xliff:g id="SECOND">%2$s</xliff:g>"</string>
     <string name="keyguard_quick_affordance_none_selected" msgid="8494127020144112003">"Жок"</string>
     <string name="show_notifications_on_lock_screen" msgid="4157744243084646720">"Билдирмелерди кулпуланган экранда көрсөтүү"</string>
