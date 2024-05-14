@@ -204,7 +204,7 @@ class ColorPickerFragment : AppbarFragment() {
                     context,
                     lifecycle,
                     injector.getDarkModeSnapshotRestorer(requireContext()),
-                    injector.uiModeManager,
+                    injector.uiModeManager.get(),
                     injector.getUserEventLogger(),
                 )
                 .createView(requireContext())
@@ -250,10 +250,6 @@ class ColorPickerFragment : AppbarFragment() {
 
     override fun getDefaultTitle(): CharSequence {
         return requireContext().getString(R.string.color_picker_title)
-    }
-
-    override fun getToolbarColorId(): Int {
-        return android.R.color.transparent
     }
 
     override fun getToolbarTextColor(): Int {
