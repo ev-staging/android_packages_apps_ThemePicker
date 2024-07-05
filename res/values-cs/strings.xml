@@ -121,7 +121,7 @@
     <string name="color_picker_title" msgid="6666830057938082864">"Systémové barvy"</string>
     <string name="keyguard_slot_name_bottom_start" msgid="8747677880200629719">"Zkratka vlevo"</string>
     <string name="keyguard_slot_name_bottom_end" msgid="2525487375680217083">"Zkratka vpravo"</string>
-    <string name="keyguard_affordance_none" msgid="1751643933430782312">"Žádné"</string>
+    <string name="keyguard_affordance_none" msgid="1751643933430782312">"Nic"</string>
     <string name="keyguard_affordance_enablement_dialog_headline" msgid="365379085932610314">"Zástupce nelze přidat"</string>
     <string name="keyguard_affordance_enablement_dialog_action_template" msgid="8117011931337357438">"Otevřít aplikaci <xliff:g id="APPNAME">%1$s</xliff:g>"</string>
     <string name="keyguard_affordance_enablement_dialog_message" msgid="6136286758939253570">"Podmínky pro to, aby aplikaci <xliff:g id="APPNAME">%1$s</xliff:g> bylo možné přidat jako zkratku:"</string>
@@ -131,7 +131,7 @@
     <string name="color_contrast_section_title" msgid="7194809124718896091">"Barevný kontrast"</string>
     <string name="color_contrast_default_title" msgid="7954235103549276978">"Výchozí"</string>
     <string name="color_contrast_medium_title" msgid="8071574793250090215">"Střední"</string>
-    <string name="color_contrast_high_title" msgid="5554685752479470200">"Vysoká"</string>
+    <string name="color_contrast_high_title" msgid="5554685752479470200">"Vysoký"</string>
     <string name="keyguard_quick_affordance_two_selected_template" msgid="1757099194522296363">"<xliff:g id="FIRST">%1$s</xliff:g>, <xliff:g id="SECOND">%2$s</xliff:g>"</string>
     <string name="keyguard_quick_affordance_none_selected" msgid="8494127020144112003">"Žádné"</string>
     <string name="show_notifications_on_lock_screen" msgid="4157744243084646720">"Zobrazovat oznámení na obrazovce uzamčení"</string>
